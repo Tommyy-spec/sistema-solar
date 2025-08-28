@@ -48,7 +48,7 @@ const resolveURL = (u) =>
 /* =================== Rutas de texturas (más tolerantes a mayúsculas) =================== */
 const TEX = {
   sun: [
-    "/textures/sol/sun.jpg",
+    "/textures/sol/sun",
     "/textures/sol/sun.JPG",
     "/textures/sol/Sun.jpg",
     "/textures/sol/Sun.JPG",
