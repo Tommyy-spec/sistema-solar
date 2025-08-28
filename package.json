@@ -27,3 +27,9 @@
     "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
   }
 }
+git init
+git remote set-url origin https://github.com/Tommyy-spec/sistema-solar.git
+git add -A
+git commit -m "Versión final lista para deploy"
+git branch -M main
+git push -u origin main --force
