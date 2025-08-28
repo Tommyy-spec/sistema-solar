@@ -261,7 +261,7 @@ const RENDER_SCALES_BASE = {
     planetExaggeration: 1.2,
     minSize: 0.18,
   },
-  real: { name: "Real (muy dispar)", sunR: 3.0, auInSunR: 30, planetExaggeration: 1.0, minSize: 0.2 },
+  real: { name: "Real", sunR: 3.0, auInSunR: 30, planetExaggeration: 1.0, minSize: 0.2 },
   visual: { name: "Visual realista", sunR: 3.2, auInSunR: 20, planetExaggeration: 1.4, minSize: 0.16 },
 };
 function buildScale(key) {
