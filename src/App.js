@@ -940,14 +940,12 @@ const IMPORTANT = {
     { label: "Luz hasta la Tierra", value: "≈ 8 min 20 s" },
   ],
   Mercurio: [
-    { label: "Distancia al Sol", value: "≈ 58 millones km (0,39 UA)" },
     { label: "Distancia mínima a la Tierra", value: "≈ 77 millones km" },
     { label: "Radio", value: "≈ 2.440 km" },
     { label: "Minerales", value: "Silicatos; pocos óxidos de Fe; sulfuros y metales; evidencias de grafito (MESSENGER)" },
     { label: "Energías posibles", value: "Solar muy intensa (~7× Tierra); Geotérmica limitada; Eólica casi nula; Química (minerales)" },
   ],
   Venus: [
-    { label: "Distancia al Sol", value: "≈ 108 millones km (0,72 UA)" },
     { label: "Distancia mínima a la Tierra", value: "≈ 40 millones km" },
     { label: "Radio", value: "≈ 6.052 km" },
     { label: "Minerales", value: "Basaltos volcánicos; silicatos (feldespatos, piroxenos); sulfuros/pirita; óxidos de hierro" },
@@ -973,7 +971,6 @@ const IMPORTANT = {
     { label: "Por qué no Venus", value: "Temperaturas y atmósfera de Venus son extremas; en Marte el día es similar, hay hielo y exploración exitosa con robots" },
   ],
   "Júpiter": [
-    { label: "Distancia al Sol", value: "5,2 UA (≈ 778 millones km)" },
     { label: "Diámetro / Radio", value: "≈ 140.000 km / 71.492 km" },
     { label: "Composición", value: "≈90% H, ≈10% He (sin superficie sólida)" },
     { label: "Atmósfera", value: "Bandas de nubes (amoníaco, hidrosulfuro y agua)" },
@@ -982,7 +979,6 @@ const IMPORTANT = {
     { label: "Recursos/energía", value: "Vientos > 500 km/h; hidrógeno metálico conductor; en Europa, energía undimotriz del océano" },
   ],
   Saturno: [
-    { label: "Distancia al Sol", value: "9,5 UA (≈ 1.430 millones km)" },
     { label: "Diámetro / Radio", value: "≈ 116.000 km / 60.268 km" },
     { label: "Composición", value: "Similar a Júpiter: H y He" },
     { label: "Anillos", value: "Hielo, roca y polvo" },
@@ -992,7 +988,6 @@ const IMPORTANT = {
     { label: "Recursos/energía", value: "Hidrocarburos en Titán: metano/etano (combustible si se aporta oxígeno)" },
   ],
   Urano: [
-    { label: "Distancia al Sol", value: "≈ 3.000 millones km (19,2 UA)" },
     { label: "Periodo orbital", value: "84 años" },
     { label: "Inclinación", value: "≈ 98° (prácticamente acostado)" },
     { label: "Temperatura media", value: "≈ −224 °C (el más frío)" },
@@ -1002,7 +997,6 @@ const IMPORTANT = {
     { label: "Energía posible", value: "Eólica (vientos), Magnética (campo irregular), Química (metano/H₂). Robots podrían instalar turbinas y recolectar gases" },
   ],
   Neptuno: [
-    { label: "Distancia al Sol", value: "≈ 4.500 millones km (30,05 UA)" },
     { label: "Periodo orbital", value: "165 años" },
     { label: "Temperatura media", value: "≈ −214 °C" },
     { label: "Atmósfera", value: "Hidrógeno, helio y metano" },
