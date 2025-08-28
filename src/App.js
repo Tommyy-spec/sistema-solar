@@ -1,4 +1,4 @@
-// App.js — Sistema Solar 3D (Luna anidada + fly-to + Datos importantes + fix texturas Sol)
+// App.js — Sistema Solar 3D (Luna anidada + fly-to + Datos importantes + fix texturas Sol + HUD plegable + medidas en km)
 // CRA + three r0.160 + @react-three/drei
 
 import React, {
@@ -609,7 +609,7 @@ function Meteors({ count = 70, radius = 260 }) {
 }
 
 /* =================== Medidas visuales Sol→planeta =================== */
-function PlanetMeasureLine({ planetKey, planetRefs, color, au, dataMode }) {
+function PlanetMeasureLine({ planetKey, planetRefs, color, au }) {
   const [pts, setPts] = useState(null);
   const [labelPos, setLabelPos] = useState(new THREE.Vector3());
   useFrame(() => {
@@ -622,11 +622,9 @@ function PlanetMeasureLine({ planetKey, planetRefs, color, au, dataMode }) {
   });
   if (!pts) return null;
 
-  const km = au * AU_KM;
-  const label =
-    dataMode === "REAL_1_1"
-      ? `${au.toFixed(2)} AU • ${km.toLocaleString("es-AR")} km`
-      : `${au.toFixed(2)} AU`;
+  // SOLO km
+  const km = Math.round(au * AU_KM);
+  const label = `${fmtKm(km)} km`;
 
   return (
     <>
@@ -747,7 +745,7 @@ const SolarSystem = forwardRef(function SolarSystem(
     planetsMoving,
     controlsAutoTarget,
     showVisualMeasures,
-    dataMode,
+    dataMode, // ya no lo usa PlanetMeasureLine, pero lo dejamos por compat
   },
   ref
 ) {
@@ -848,7 +846,6 @@ const SolarSystem = forwardRef(function SolarSystem(
               planetRefs={planetRefs}
               color={measureColor}
               au={p.au}
-              dataMode={dataMode}
             />
           )}
         </group>
@@ -869,9 +866,9 @@ function sizeDisplay(planet, dataMode) {
     return `${fmtKm(planet.radius_km * 2)} km (diámetro)`;
   return `${diamInEarths(planet).toFixed(2)} D⊕ (diámetro)`;
 }
-function distDisplayAUkm(au) {
-  const km = au * AU_KM;
-  return `${au.toFixed(2)} AU (${fmtKm(km)} km)`;
+function distDisplayKm(au) {
+  const km = Math.round(au * AU_KM);
+  return `${fmtKm(km)} km`;
 }
 
 /* =================== "Datos importantes" por cuerpo =================== */
@@ -1143,11 +1140,7 @@ function InfoPanel({ selected, onClose, dataMode, onFocus }) {
         {selected.au ? (
           <>
             <div style={{ opacity: 0.7 }}>Distancia media</div>
-            <div>
-              {dataMode === "REAL_1_1"
-                ? distDisplayAUkm(selected.au)
-                : `${selected.au.toFixed(2)} AU`}
-            </div>
+            <div>{distDisplayKm(selected.au)}</div>
           </>
         ) : null}
         <div style={{ opacity: 0.7 }}>Tamaño</div>{" "}
@@ -1364,7 +1357,7 @@ function ScaleLegend({ scaleCfg }) {
   );
 }
 
-/* =================== HUD (UI externa) =================== */
+/* =================== HUD (UI externa) — PLEGABLE =================== */
 function HUD({
   speed,
   setSpeed,
@@ -1387,7 +1380,28 @@ function HUD({
   onJumpToKey,
   showVisualMeasures,
   setShowVisualMeasures,
+  open, setOpen, // <<< NUEVO
 }) {
+  // Botón flotante cuando está cerrado
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        style={{
+          position:'fixed', top:16, left:16, zIndex:30,
+          padding:'10px 12px', borderRadius:12,
+          border:'1px solid rgba(255,255,255,.25)',
+          background:'rgba(0,0,0,.45)', color:'#fff',
+          fontFamily:'Roboto Mono, monospace'
+        }}
+        title="Mostrar controles"
+      >
+        ⚙️ Controles
+      </button>
+    );
+  }
+
+  // Tarjeta abierta
   return (
     <div
       style={{
@@ -1404,12 +1418,24 @@ function HUD({
       <div
         style={{
           backdropFilter: "blur(6px)",
-          background: "rgba(0,0,0,.35)",
+          background: "rgba(0,0,0,.55)",
           padding: 12,
           borderRadius: 14,
           border: "1px solid rgba(255,255,255,.2)",
+          maxWidth: 420,
         }}
       >
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
+          <div style={{fontWeight:800, fontFamily:'Orbitron, sans-serif', letterSpacing:1}}>CONTROLES</div>
+          <button
+            onClick={() => setOpen(false)}
+            style={{border:'1px solid rgba(255,255,255,.3)', background:'rgba(255,255,255,.08)', color:'#fff', borderRadius:8, padding:'4px 8px', fontFamily:'Roboto Mono, monospace'}}
+            title="Ocultar controles"
+          >
+            ✕
+          </button>
+        </div>
+
         <div
           style={{
             fontWeight: 800,
@@ -1749,7 +1775,8 @@ const Scene = forwardRef(function Scene(
         const pos = solarSystemRef.current.getWorldPositionOf(key);
         if (!pos) return;
         const r = solarSystemRef.current.getApproxPlanetRadius(key);
-        const dist = THREE.MathUtils.clamp(r * 7, 8, 120);
+        // MÁS CERCA
+        const dist = THREE.MathUtils.clamp(r * 4.0, 2.5, 80);
 
         setControlsAutoTarget(false);
         startFly(pos, dist);
@@ -1790,7 +1817,7 @@ const Scene = forwardRef(function Scene(
         enableDamping
         dampingFactor={0.08}
         maxDistance={3000}
-        minDistance={5}
+        minDistance={2.5}
       />
       <AdaptiveDpr pixelated />
       <Preload all />
@@ -1839,9 +1866,11 @@ export default function App() {
   const [planetsMoving, setPlanetsMoving] = useState(false); // Planetas detenidos
 
   const [selected, setSelected] = useState(null);
-  const [showDistances, setShowDistances] = useState(false);
+  const [showDistances, setShowDistances] = useState(false); // oculto al inicio
   const [useRealMoonDistance, setUseRealMoonDistance] = useState(true);
-  const [showVisualMeasures, setShowVisualMeasures] = useState(true);
+  const [showVisualMeasures, setShowVisualMeasures] = useState(false); // oculto al inicio (solo km cuando se active)
+
+  const [hudOpen, setHudOpen] = useState(false); // HUD plegable: cerrado al inicio
 
   const scaleCfg = useMemo(() => buildScale(modeKey), [modeKey]);
   const sceneRef = useRef();
@@ -1899,6 +1928,8 @@ export default function App() {
         onJumpToKey={jumpToKey}
         showVisualMeasures={showVisualMeasures}
         setShowVisualMeasures={setShowVisualMeasures}
+        open={hudOpen}
+        setOpen={setHudOpen}
       />
       <InfoPanel
         selected={selected}
