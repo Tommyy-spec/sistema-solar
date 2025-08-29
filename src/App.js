@@ -1,4 +1,4 @@
-// App.js — Sistema Solar 3D (Luna anidada + fly-to + Datos importantes + fix texturas Sol + HUD plegable + medidas en km + Sol procedural)
+// App.js — Sistema Solar 3D (Luna anidada + fly-to + Datos importantes + fix texturas Sol + HUD plegable + medidas en km + boost de planetas)
 // CRA + three r0.160 + @react-three/drei
 
 import React, {
@@ -48,7 +48,7 @@ const resolveURL = (u) =>
 /* =================== Rutas de texturas (más tolerantes a mayúsculas) =================== */
 const TEX = {
   sun: [
-    "/textures/sol/sun",
+    "/textures/sol/sun", // si no hay textura, queda amarillo
     "/textures/sol/sun.JPG",
     "/textures/sol/Sun.jpg",
     "/textures/sol/Sun.JPG",
@@ -406,93 +406,39 @@ function OrbitPath({ r }) {
 }
 
 /* =================== Conversores =================== */
+// >>> MODIFICADO: factor opcional planetBoost aplicado solo a tamaños (no al Sol)
 const kmToSceneRadius = (km, sc) =>
-  Math.max(sc.minSize, km * sc.sizeFactor * sc.planetExaggeration);
+  Math.max(
+    sc.minSize,
+    km * sc.sizeFactor * sc.planetExaggeration * (sc.planetBoost ?? 1)
+  );
 const auToSceneDistance = (au, sc) => Math.max(5, au * AU_KM * sc.distFactor);
 const kmToSceneDistance = (km, sc) => Math.max(0.6, km * sc.distFactor);
-
-/* =================== Sol procedural (fallback si no hay textura) =================== */
-function useProceduralSunTexture(size = 1024) {
-  const { gl } = useThree();
-  const [tex, setTex] = useState(null);
-
-  useEffect(() => {
-    const c = document.createElement("canvas");
-    c.width = c.height = size;
-    const ctx = c.getContext("2d");
-
-    // Degradado radial cálido
-    const g = ctx.createRadialGradient(size/2, size/2, size*0.06, size/2, size/2, size*0.5);
-    g.addColorStop(0.00, "#fff7b8");
-    g.addColorStop(0.35, "#ffd166");
-    g.addColorStop(0.70, "#ff9e00");
-    g.addColorStop(1.00, "#ff6a00");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, size, size);
-
-    // Granulado sutil tipo gránulos solares
-    const img = ctx.getImageData(0, 0, size, size);
-    const d = img.data;
-    for (let i = 0; i < d.length; i += 4) {
-      const r = (Math.random() * 12) - 6; // ±6
-      d[i]   = Math.max(0, Math.min(255, d[i]   + r));
-      d[i+1] = Math.max(0, Math.min(255, d[i+1] + r * 0.7));
-      d[i+2] = Math.max(0, Math.min(255, d[i+2] + r * 0.25));
-    }
-    ctx.putImageData(img, 0, 0);
-
-    const texture = new THREE.CanvasTexture(c);
-    if ("colorSpace" in texture && "SRGBColorSpace" in THREE) texture.colorSpace = THREE.SRGBColorSpace;
-    else if ("encoding" in texture && "sRGBEncoding" in THREE) texture.encoding = THREE.sRGBEncoding;
-    texture.anisotropy = Math.min(8, gl.capabilities.getMaxAnisotropy?.() || 8);
-    texture.needsUpdate = true;
-    setTex(texture);
-  }, [size, gl]);
-
-  return tex;
-}
 
 /* =================== Objetos 3D =================== */
 function Sun({ map, onSelect, radius }) {
   const ref = useRef();
-  // Fallback procedural si no hay textura válida
-  const procMap = useProceduralSunTexture(1024);
-  const finalMap = map || procMap;
-
   useFrame((_, dt) => {
     if (ref.current) ref.current.rotation.y += dt * 0.05;
   });
 
+  const material = map ? (
+    <meshBasicMaterial map={map} toneMapped={false} />
+  ) : (
+    <meshBasicMaterial color="#ffcc66" toneMapped={false} />
+  );
+
   return (
     <group>
-      {/* Cuerpo del Sol */}
       <mesh
         ref={ref}
         onClick={() => onSelect && onSelect(SUN)}
         frustumCulled={false}
       >
         <sphereGeometry args={[radius, 64, 64]} />
-        {finalMap
-          ? <meshBasicMaterial map={finalMap} toneMapped={false} />
-          : <meshBasicMaterial color="#ffcc66" toneMapped={false} />}
+        {material}
       </mesh>
-
-      {/* Halo/Corona aditiva */}
-      <mesh frustumCulled={false}>
-        <sphereGeometry args={[radius * 1.07, 48, 48]} />
-        <meshBasicMaterial
-          color="#ffbb55"
-          transparent
-          opacity={0.35}
-          blending={THREE.AdditiveBlending}
-          depthWrite={false}
-          toneMapped={false}
-        />
-      </mesh>
-
-      {/* Luz del Sol */}
       <pointLight position={[0, 0, 0]} intensity={3.2} distance={600} decay={2} />
-
       <Text
         position={[0, radius + 0.8, 0]}
         fontSize={0.6}
@@ -803,7 +749,7 @@ const SolarSystem = forwardRef(function SolarSystem(
     planetsMoving,
     controlsAutoTarget,
     showVisualMeasures,
-    dataMode, // ya no lo usa PlanetMeasureLine, pero lo dejamos por compat
+    dataMode, // no usado por la línea, lo dejamos por compat
   },
   ref
 ) {
@@ -940,16 +886,34 @@ const IMPORTANT = {
     { label: "Luz hasta la Tierra", value: "≈ 8 min 20 s" },
   ],
   Mercurio: [
+    { label: "Distancia al Sol", value: "≈ 58 millones km (0,39 UA)" },
     { label: "Distancia mínima a la Tierra", value: "≈ 77 millones km" },
     { label: "Radio", value: "≈ 2.440 km" },
-    { label: "Minerales", value: "Silicatos; pocos óxidos de Fe; sulfuros y metales; evidencias de grafito (MESSENGER)" },
-    { label: "Energías posibles", value: "Solar muy intensa (~7× Tierra); Geotérmica limitada; Eólica casi nula; Química (minerales)" },
+    {
+      label: "Minerales",
+      value:
+        "Silicatos; pocos óxidos de Fe; sulfuros y metales; evidencias de grafito (MESSENGER)",
+    },
+    {
+      label: "Energías posibles",
+      value:
+        "Solar muy intensa (~7× Tierra); Geotérmica limitada; Eólica casi nula; Química (minerales)",
+    },
   ],
   Venus: [
+    { label: "Distancia al Sol", value: "≈ 108 millones km (0,72 UA)" },
     { label: "Distancia mínima a la Tierra", value: "≈ 40 millones km" },
     { label: "Radio", value: "≈ 6.052 km" },
-    { label: "Minerales", value: "Basaltos volcánicos; silicatos (feldespatos, piroxenos); sulfuros/pirita; óxidos de hierro" },
-    { label: "Energías posibles", value: "Solar intensa (limitada por atmósfera densa); Eólica en capas altas; Geotérmica; Química (CO₂, SO₂)" },
+    {
+      label: "Minerales",
+      value:
+        "Basaltos volcánicos; silicatos (feldespatos, piroxenos); sulfuros/pirita; óxidos de hierro",
+    },
+    {
+      label: "Energías posibles",
+      value:
+        "Solar intensa (limitada por atmósfera densa); Eólica en capas altas; Geotérmica; Química (CO₂, SO₂)",
+    },
   ],
   Tierra: [
     { label: "Diámetro", value: "12.742 km" },
@@ -965,44 +929,103 @@ const IMPORTANT = {
     { label: "Atmósfera", value: "Tenue; ~95% CO₂" },
     { label: "Duración del día", value: "24 h 37 min" },
     { label: "Satélites", value: "2 (Fobos y Deimos)" },
-    { label: "Dato curioso", value: "Monte Olimpo: 22 km (el volcán más grande del Sistema Solar)" },
-    { label: "Energías viables", value: "Solar (afectada por tormentas); Nuclear (fisión tipo Kilopower, confiable); Eólica (baja densidad); Geotérmica (posible)" },
-    { label: "Recursos", value: "Hielo de agua; CO₂ atmosférico; minerales y óxidos de hierro" },
-    { label: "Por qué no Venus", value: "Temperaturas y atmósfera de Venus son extremas; en Marte el día es similar, hay hielo y exploración exitosa con robots" },
+    {
+      label: "Dato curioso",
+      value: "Monte Olimpo: 22 km (el volcán más grande del Sistema Solar)",
+    },
+    {
+      label: "Energías viables",
+      value:
+        "Solar (afectada por tormentas); Nuclear (fisión tipo Kilopower, confiable); Eólica (baja densidad); Geotérmica (posible)",
+    },
+    {
+      label: "Recursos",
+      value: "Hielo de agua; CO₂ atmosférico; minerales y óxidos de hierro",
+    },
+    {
+      label: "Por qué no Venus",
+      value:
+        "Temperaturas y atmósfera de Venus son extremas; en Marte el día es similar, hay hielo y exploración exitosa con robots",
+    },
   ],
   "Júpiter": [
+    { label: "Distancia al Sol", value: "5,2 UA (≈ 778 millones km)" },
     { label: "Diámetro / Radio", value: "≈ 140.000 km / 71.492 km" },
     { label: "Composición", value: "≈90% H, ≈10% He (sin superficie sólida)" },
-    { label: "Atmósfera", value: "Bandas de nubes (amoníaco, hidrosulfuro y agua)" },
-    { label: "Campo magnético", value: "Muy intenso por hidrógeno metálico + rotación rápida (gran dínamo)" },
-    { label: "Lunas", value: "95 confirmadas; Europa destaca por posible océano subsuperficial (candidato a vida)" },
-    { label: "Recursos/energía", value: "Vientos > 500 km/h; hidrógeno metálico conductor; en Europa, energía undimotriz del océano" },
+    {
+      label: "Atmósfera",
+      value: "Bandas de nubes (amoníaco, hidrosulfuro y agua)",
+    },
+    {
+      label: "Campo magnético",
+      value:
+        "Muy intenso por hidrógeno metálico + rotación rápida (gran dínamo)",
+    },
+    {
+      label: "Lunas",
+      value:
+        "95 confirmadas; Europa destaca por posible océano subsuperficial (candidato a vida)",
+    },
+    {
+      label: "Recursos/energía",
+      value:
+        "Vientos > 500 km/h; hidrógeno metálico conductor; en Europa, energía undimotriz del océano",
+    },
   ],
   Saturno: [
+    { label: "Distancia al Sol", value: "9,5 UA (≈ 1.430 millones km)" },
     { label: "Diámetro / Radio", value: "≈ 116.000 km / 60.268 km" },
     { label: "Composición", value: "Similar a Júpiter: H y He" },
     { label: "Anillos", value: "Hielo, roca y polvo" },
     { label: "Atmósfera", value: "Vientos > 1.800 km/h" },
-    { label: "Núcleo", value: "Difuso; elementos pesados y ‘hielos’ (agua, metano, amoníaco) a alta presión/temperatura" },
-    { label: "Lunas", value: "146; Titán con atmósfera densa y lagos de metano/etano líquido" },
-    { label: "Recursos/energía", value: "Hidrocarburos en Titán: metano/etano (combustible si se aporta oxígeno)" },
+    {
+      label: "Núcleo",
+      value:
+        "Difuso; elementos pesados y ‘hielos’ (agua, metano, amoníaco) a alta presión/temperatura",
+    },
+    {
+      label: "Lunas",
+      value:
+        "146; Titán con atmósfera densa y lagos de metano/etano líquido",
+    },
+    {
+      label: "Recursos/energía",
+      value:
+        "Hidrocarburos en Titán: metano/etano (combustible si se aporta oxígeno)",
+    },
   ],
   Urano: [
+    { label: "Distancia al Sol", value: "≈ 3.000 millones km (19,2 UA)" },
     { label: "Periodo orbital", value: "84 años" },
     { label: "Inclinación", value: "≈ 98° (prácticamente acostado)" },
     { label: "Temperatura media", value: "≈ −224 °C (el más frío)" },
     { label: "Atmósfera", value: "Hidrógeno, helio y metano" },
     { label: "Vientos", value: "Hasta ~900 km/h" },
-    { label: "Campo magnético", value: "Inclinado y desalineado respecto al eje de rotación" },
-    { label: "Energía posible", value: "Eólica (vientos), Magnética (campo irregular), Química (metano/H₂). Robots podrían instalar turbinas y recolectar gases" },
+    {
+      label: "Campo magnético",
+      value: "Inclinado y desalineado respecto al eje de rotación",
+    },
+    {
+      label: "Energía posible",
+      value:
+        "Eólica (vientos), Magnética (campo irregular), Química (metano/H₂). Robots podrían instalar turbinas y recolectar gases",
+    },
   ],
   Neptuno: [
+    { label: "Distancia al Sol", value: "≈ 4.500 millones km (30,05 UA)" },
     { label: "Periodo orbital", value: "165 años" },
     { label: "Temperatura media", value: "≈ −214 °C" },
     { label: "Atmósfera", value: "Hidrógeno, helio y metano" },
     { label: "Vientos", value: "Hasta ~2.100 km/h (los más rápidos)" },
-    { label: "Campo magnético", value: "Muy fuerte y desalineado" },
-    { label: "Energía posible", value: "Eólica (mejor candidato), Magnética (campo potente), Química (metano/H₂ abundantes). Robots soportan el frío extremo" },
+    {
+      label: "Campo magnético",
+      value: "Muy fuerte y desalineado",
+    },
+    {
+      label: "Energía posible",
+      value:
+        "Eólica (mejor candidato), Magnética (campo potente), Química (metano/H₂ abundantes). Robots soportan el frío extremo",
+    },
   ],
 };
 
@@ -1338,7 +1361,7 @@ function ScaleLegend({ scaleCfg }) {
   );
 }
 
-/* =================== HUD (UI externa) — PLEGABLE =================== */
+/* =================== HUD (UI externa) — PLEGABLE + BOOST PLANETAS =================== */
 function HUD({
   speed,
   setSpeed,
@@ -1361,7 +1384,9 @@ function HUD({
   onJumpToKey,
   showVisualMeasures,
   setShowVisualMeasures,
-  open, setOpen, // <<< NUEVO
+  open, setOpen,
+  /* NUEVO */
+  planetBoost, setPlanetBoost,
 }) {
   // Botón flotante cuando está cerrado
   if (!open) {
@@ -1559,8 +1584,56 @@ function HUD({
               ))}
             </div>
 
-            {/* Controles */}
+            {/* TAMAÑO DE PLANETAS (solo planetas) */}
+            <div
+              style={{
+                fontWeight: 800,
+                fontFamily: "Orbitron, sans-serif",
+                marginTop: 8,
+                marginBottom: 8,
+                letterSpacing: 1,
+              }}
+            >
+              TAMAÑO DE PLANETAS (solo planetas)
+            </div>
             <div style={{ fontFamily: "Roboto Mono, monospace", marginBottom: 6 }}>
+              x{planetBoost.toFixed(0)}
+            </div>
+            <input
+              type="range"
+              min={1}
+              max={40}
+              step={1}
+              value={planetBoost}
+              onChange={(e) => setPlanetBoost(parseInt(e.target.value, 10))}
+              style={{ width: 260 }}
+            />
+            <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
+              {[1, 3, 5, 10, 20, 30, 40].map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setPlanetBoost(v)}
+                  style={{
+                    fontSize: 12,
+                    padding: "6px 8px",
+                    borderRadius: 10,
+                    border: "1px solid rgba(255,255,255,.25)",
+                    background:
+                      planetBoost === v ? "rgba(255,255,255,.18)" : "rgba(255,255,255,.08)",
+                    color: "#fff",
+                    fontFamily: "Roboto Mono, monospace",
+                  }}
+                >
+                  x{v}
+                </button>
+              ))}
+            </div>
+            <div style={{ fontSize: 12, opacity: 0.75, marginTop: 6, fontFamily: "Roboto Mono, monospace" }}>
+              No cambia el Sol ni las distancias.
+            </div>
+
+            {/* Controles */}
+            <div style={{ fontFamily: "Roboto Mono, monospace", marginTop: 14, marginBottom: 6 }}>
               Velocidad orbital: x{speed.toFixed(1)}
             </div>
             <input
@@ -1849,11 +1922,19 @@ export default function App() {
   const [selected, setSelected] = useState(null);
   const [showDistances, setShowDistances] = useState(false); // oculto al inicio
   const [useRealMoonDistance, setUseRealMoonDistance] = useState(true);
-  const [showVisualMeasures, setShowVisualMeasures] = useState(false); // oculto al inicio (solo km cuando se active)
+  const [showVisualMeasures, setShowVisualMeasures] = useState(false); // oculto al inicio
 
   const [hudOpen, setHudOpen] = useState(false); // HUD plegable: cerrado al inicio
 
-  const scaleCfg = useMemo(() => buildScale(modeKey), [modeKey]);
+  // >>> NUEVO: boost de planetas (x1 = real)
+  const [planetBoost, setPlanetBoost] = useState(1);
+
+  // aplicar boost a la escala (solo afecta tamaños de planetas/lunas)
+  const scaleCfg = useMemo(
+    () => ({ ...buildScale(modeKey), planetBoost }),
+    [modeKey, planetBoost]
+  );
+
   const sceneRef = useRef();
 
   const handleSelect = (obj) => {
@@ -1911,6 +1992,9 @@ export default function App() {
         setShowVisualMeasures={setShowVisualMeasures}
         open={hudOpen}
         setOpen={setHudOpen}
+        /* NUEVO */
+        planetBoost={planetBoost}
+        setPlanetBoost={setPlanetBoost}
       />
       <InfoPanel
         selected={selected}
