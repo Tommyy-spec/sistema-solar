@@ -1,4 +1,5 @@
-// App.js — Sistema Solar 3D (Luna anidada + fly-to + Datos importantes + fix texturas Sol + HUD plegable + medidas en km + boost de planetas)
+// App.js — Sistema Solar 3D + Capas de la Tierra
+// (Luna anidada + fly-to + Datos importantes + HUD plegable + medidas en km + Earth Layers)
 // CRA + three r0.160 + @react-three/drei
 
 import React, {
@@ -45,10 +46,11 @@ const PUB =
 const resolveURL = (u) =>
   /^(https?:|data:)/i.test(u) ? u : `${PUB}${u.startsWith("/") ? "" : "/"}${u}`;
 
-/* =================== Rutas de texturas (más tolerantes a mayúsculas) =================== */
+/* =================== Rutas de texturas (tolerantes a mayúsculas) =================== */
 const TEX = {
+  // Si no tenés texturas del Sol, quedará color sólido (está bien).
   sun: [
-    "/textures/sol/sun", // si no hay textura, queda amarillo
+    "/textures/sol/sun.jpg",
     "/textures/sol/sun.JPG",
     "/textures/sol/Sun.jpg",
     "/textures/sol/Sun.JPG",
@@ -137,149 +139,33 @@ const SUN = {
 };
 
 const PLANETS = [
-  {
-    key: "Mercurio",
-    type: "Planeta rocoso",
-    color: "#b5a642",
-    radius_km: 2440,
-    au: 0.39,
-    period_y: 0.241,
-    day_h: 1407.6,
-    tempC: "≈167 °C",
-    life: "No conocida",
-    formed: "Acreción (~4.5 Ga)",
-    fact: "Su año dura 88 días y casi no tiene atmósfera.",
-    tex: "mercury",
-  },
-  {
-    key: "Venus",
-    type: "Planeta rocoso",
-    color: "#caa46a",
-    radius_km: 6052,
-    au: 0.72,
-    period_y: 0.615,
-    day_h: -5832.5,
-    tempC: "≈465 °C",
-    life: "No conocida",
-    formed: "Acreción (~4.5 Ga)",
-    fact: "Rota al revés y su día es más largo que su año.",
-    tex: "venus",
-  },
-  {
-    key: "Tierra",
-    type: "Planeta rocoso",
-    color: "#2e86de",
-    radius_km: 6371,
-    au: 1.0,
-    period_y: 1.0,
-    day_h: 23.93,
-    tempC: "≈15 °C",
-    life: "Sí, confirmada",
-    formed: "Acreción (~4.54 Ga)",
-    fact: "La Luna estabiliza el eje y el clima a largo plazo.",
-    tex: "earth",
-  },
-  {
-    key: "Marte",
-    type: "Planeta rocoso",
-    color: "#b4513c",
-    radius_km: 3389,
-    au: 1.52,
-    period_y: 1.881,
-    day_h: 24.62,
-    tempC: "≈−60 °C",
-    life: "No confirmada",
-    formed: "Acreción (~4.5 Ga)",
-    fact: "Olympus Mons es el volcán más grande conocido.",
-    tex: "mars",
-  },
-  {
-    key: "Júpiter",
-    type: "Gigante gaseoso",
-    color: "#d2b48c",
-    radius_km: 69911,
-    au: 5.2,
-    period_y: 11.86,
-    day_h: 9.93,
-    tempC: "≈−110 °C",
-    life: "No conocida",
-    formed: "Inestabilidad/acreción",
-    fact: "Campo magnético ~20.000× el de la Tierra.",
-    tex: "jupiter",
-  },
-  {
-    key: "Saturno",
-    type: "Gigante gaseoso",
-    color: "#f0e0b6",
-    radius_km: 58232,
-    au: 9.58,
-    period_y: 29.46,
-    day_h: 10.7,
-    tempC: "≈−140 °C",
-    life: "No conocida",
-    formed: "Inestabilidad/acreción",
-    fact: "Anillos de hielo y roca.",
-    tex: "saturn",
-    ring: true,
-  },
-  {
-    key: "Urano",
-    type: "Gigante helado",
-    color: "#66e0d9",
-    radius_km: 25362,
-    au: 19.2,
-    period_y: 84.01,
-    day_h: -17.24,
-    tempC: "≈−195 °C",
-    life: "No conocida",
-    formed: "Acreción (regiones frías)",
-    fact: "Gira casi tumbado (inclinación ~98°).",
-    tex: "uranus",
-  },
-  {
-    key: "Neptuno",
-    type: "Gigante helado",
-    color: "#4169e1",
-    radius_km: 24622,
-    au: 30.05,
-    period_y: 164.8,
-    day_h: 16.11,
-    tempC: "≈−200 °C",
-    life: "No conocida",
-    formed: "Acreción (regiones frías)",
-    fact: "Vientos >2.000 km/h.",
-    tex: "neptune",
-  },
+  { key:"Mercurio", type:"Planeta rocoso", color:"#b5a642", radius_km:2440,  au:0.39, period_y:0.241, day_h:1407.6,  tempC:"≈167 °C", life:"No conocida", formed:"Acreción (~4.5 Ga)", fact:"Su año dura 88 días y casi no tiene atmósfera.", tex:"mercury"},
+  { key:"Venus",    type:"Planeta rocoso", color:"#caa46a", radius_km:6052,  au:0.72, period_y:0.615, day_h:-5832.5, tempC:"≈465 °C", life:"No conocida", formed:"Acreción (~4.5 Ga)", fact:"Rota al revés y su día es más largo que su año.", tex:"venus"},
+  { key:"Tierra",   type:"Planeta rocoso", color:"#2e86de", radius_km:6371,  au:1.00, period_y:1.0,   day_h:23.93,  tempC:"≈15 °C", life:"Sí, confirmada", formed:"Acreción (~4.54 Ga)", fact:"La Luna estabiliza el eje y el clima a largo plazo.", tex:"earth"},
+  { key:"Marte",    type:"Planeta rocoso", color:"#b4513c", radius_km:3389,  au:1.52, period_y:1.881, day_h:24.62,  tempC:"≈−60 °C", life:"No confirmada", formed:"Acreción (~4.5 Ga)",  fact:"Olympus Mons es el volcán más grande conocido.", tex:"mars"},
+  { key:"Júpiter",  type:"Gigante gaseoso",color:"#d2b48c", radius_km:69911, au:5.2,  period_y:11.86, day_h:9.93,   tempC:"≈−110 °C", life:"No conocida", formed:"Inestabilidad/acreción", fact:"Campo magnético ~20.000× el de la Tierra.", tex:"jupiter"},
+  { key:"Saturno",  type:"Gigante gaseoso",color:"#f0e0b6", radius_km:58232, au:9.58, period_y:29.46, day_h:10.7,   tempC:"≈−140 °C", life:"No conocida", formed:"Inestabilidad/acreción", fact:"Anillos de hielo y roca.", tex:"saturn", ring:true},
+  { key:"Urano",    type:"Gigante helado", color:"#66e0d9", radius_km:25362, au:19.2, period_y:84.01, day_h:-17.24, tempC:"≈−195 °C", life:"No conocida", formed:"Acreción (regiones frías)", fact:"Gira casi tumbado (inclinación ~98°).", tex:"uranus"},
+  { key:"Neptuno",  type:"Gigante helado", color:"#4169e1", radius_km:24622, au:30.05,period_y:164.8, day_h:16.11,  tempC:"≈−200 °C", life:"No conocida", formed:"Acreción (regiones frías)", fact:"Vientos >2.000 km/h.", tex:"neptune"},
 ];
 
 /* =================== Escalas de render =================== */
 const RENDER_SCALES_BASE = {
-  didactica: {
-    name: "Didáctica (compacta)",
-    sunR: 3.0,
-    auInSunR: 4,
-    planetExaggeration: 1.2,
-    minSize: 0.18,
-  },
-  real: { name: "Real", sunR: 3.0, auInSunR: 30, planetExaggeration: 1.0, minSize: 0.2 },
-  visual: { name: "Visual realista", sunR: 3.2, auInSunR: 20, planetExaggeration: 1.4, minSize: 0.16 },
+  didactica: { name:"Didáctica (compacta)", sunR:3.0, auInSunR:4,  planetExaggeration:1.2, minSize:0.18 },
+  real:      { name:"Real",                  sunR:3.0, auInSunR:30, planetExaggeration:1.0, minSize:0.20 },
+  visual:    { name:"Visual realista",       sunR:3.2, auInSunR:20, planetExaggeration:1.4, minSize:0.16 },
 };
 function buildScale(key) {
   const cfg = RENDER_SCALES_BASE[key];
-  const sizeFactor = cfg.sunR / SUN.radius_km; // km -> unidades (tamaños)
+  const sizeFactor = cfg.sunR / SUN.radius_km;          // km -> unidades (tamaños)
   const distFactor = (cfg.sunR * cfg.auInSunR) / AU_KM; // km -> unidades (distancias)
-  return {
-    ...cfg,
-    sizeFactor,
-    distFactor,
-    planetExaggeration: cfg.planetExaggeration ?? 1.0,
-  };
+  return { ...cfg, sizeFactor, distFactor, planetExaggeration: cfg.planetExaggeration ?? 1.0 };
 }
 
 /* =================== Modos de datos (paneles) =================== */
 const DATA_MODES = {
   REAL_1_1: { label: "Datos: Real 1:1 (km/UA)" },
-  SIMPLE: { label: "Datos: Sencillo (D⊕ / AU)" },
+  SIMPLE:   { label: "Datos: Sencillo (D⊕ / AU)" },
 };
 
 /* =================== Loader robusto =================== */
@@ -303,19 +189,15 @@ function useFirstAvailableTexture(urls) {
 
     const makeTexture = (image) => {
       const t = new THREE.Texture(image);
-      if ("colorSpace" in t && "SRGBColorSpace" in THREE)
-        t.colorSpace = THREE.SRGBColorSpace;
-      else if ("encoding" in t && "sRGBEncoding" in THREE)
-        t.encoding = THREE.sRGBEncoding;
+      if ("colorSpace" in t && "SRGBColorSpace" in THREE) t.colorSpace = THREE.SRGBColorSpace;
+      else if ("encoding" in t && "sRGBEncoding" in THREE) t.encoding = THREE.sRGBEncoding;
 
       const pot = isPOT(image.width) && isPOT(image.height);
       t.generateMipmaps = !!pot;
       t.minFilter = pot ? THREE.LinearMipmapLinearFilter : THREE.LinearFilter;
       t.magFilter = THREE.LinearFilter;
       const maxAniso =
-        typeof gl.capabilities.getMaxAnisotropy === "function"
-          ? gl.capabilities.getMaxAnisotropy()
-          : 8;
+        typeof gl.capabilities.getMaxAnisotropy === "function" ? gl.capabilities.getMaxAnisotropy() : 8;
       t.anisotropy = Math.min(8, maxAniso || 8);
       t.needsUpdate = true;
       return t;
@@ -343,9 +225,7 @@ function useFirstAvailableTexture(urls) {
             const ctx = canvas.getContext("2d");
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             img = canvas;
-            console.warn(
-              `Redimensionada ${url} -> ${canvas.width}x${canvas.height}`
-            );
+            console.warn(`Redimensionada ${url} -> ${canvas.width}x${canvas.height}`);
           }
 
           const t = makeTexture(img);
@@ -358,9 +238,7 @@ function useFirstAvailableTexture(urls) {
       if (!cancelled) setTex(null);
     })();
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [JSON.stringify(urls), gl]);
 
   return tex;
@@ -393,76 +271,37 @@ function OrbitPath({ r }) {
     }
     return pts;
   }, [r]);
-  return (
-    <Line
-      points={points}
-      color="#4b5563"
-      lineWidth={1}
-      dashed
-      dashSize={0.4}
-      gapSize={0.2}
-    />
-  );
+  return <Line points={points} color="#4b5563" lineWidth={1} dashed dashSize={0.4} gapSize={0.2} />;
 }
 
 /* =================== Conversores =================== */
-// >>> MODIFICADO: factor opcional planetBoost aplicado solo a tamaños (no al Sol)
-const kmToSceneRadius = (km, sc) =>
-  Math.max(
-    sc.minSize,
-    km * sc.sizeFactor * sc.planetExaggeration * (sc.planetBoost ?? 1)
-  );
+const kmToSceneRadius = (km, sc) => Math.max(sc.minSize, km * sc.sizeFactor * sc.planetExaggeration);
 const auToSceneDistance = (au, sc) => Math.max(5, au * AU_KM * sc.distFactor);
 const kmToSceneDistance = (km, sc) => Math.max(0.6, km * sc.distFactor);
 
 /* =================== Objetos 3D =================== */
 function Sun({ map, onSelect, radius }) {
   const ref = useRef();
-  useFrame((_, dt) => {
-    if (ref.current) ref.current.rotation.y += dt * 0.05;
-  });
+  useFrame((_, dt) => { if (ref.current) ref.current.rotation.y += dt * 0.05; });
 
-  const material = map ? (
-    <meshBasicMaterial map={map} toneMapped={false} />
-  ) : (
-    <meshBasicMaterial color="#ffcc66" toneMapped={false} />
-  );
+  const material = map
+    ? <meshBasicMaterial map={map} toneMapped={false} />
+    : <meshBasicMaterial color="#ffcc66" toneMapped={false} />;
 
   return (
     <group>
-      <mesh
-        ref={ref}
-        onClick={() => onSelect && onSelect(SUN)}
-        frustumCulled={false}
-      >
+      <mesh ref={ref} onClick={() => onSelect && onSelect(SUN)} frustumCulled={false}>
         <sphereGeometry args={[radius, 64, 64]} />
         {material}
       </mesh>
       <pointLight position={[0, 0, 0]} intensity={3.2} distance={600} decay={2} />
-      <Text
-        position={[0, radius + 0.8, 0]}
-        fontSize={0.6}
-        anchorX="center"
-        anchorY="middle"
-      >
-        Sol
-      </Text>
+      <Text position={[0, radius + 0.8, 0]} fontSize={0.6} anchorX="center" anchorY="middle">Sol</Text>
     </group>
   );
 }
 
 function Planet({
-  p,
-  map,
-  ringMap,
-  speed,
-  scaleCfg,
-  onSelect,
-  showTrails,
-  selectedKey,
-  planetsMoving,
-  planetRefCb,
-  children,
+  p, map, ringMap, speed, scaleCfg, onSelect, showTrails, selectedKey, planetsMoving, planetRefCb, children
 }) {
   const group = useRef();
   const mesh = useRef();
@@ -470,84 +309,44 @@ function Planet({
   const radius = kmToSceneRadius(p.radius_km, scaleCfg);
   const orbitR = auToSceneDistance(p.au, scaleCfg);
 
-  useEffect(() => {
-    planetRefCb && planetRefCb(p.key, group.current);
-  }, [planetRefCb, p.key]);
+  useEffect(() => { planetRefCb && planetRefCb(p.key, group.current); }, [planetRefCb, p.key]);
 
   useFrame((_, dt) => {
     if (planetsMoving) {
-      angleRef.current +=
-        (dt * speed / Math.max(1e-6, p.period_y)) * Math.PI * 2;
+      angleRef.current += (dt * speed / Math.max(1e-6, p.period_y)) * Math.PI * 2;
     }
     const x = Math.cos(angleRef.current) * orbitR;
     const z = Math.sin(angleRef.current) * orbitR;
     group.current?.position.set(x, 0, z);
 
-    if (mesh.current && planetsMoving) {
-      mesh.current.rotation.y += dt * (p.day_h < 0 ? -0.05 : 0.05);
-    }
+    if (mesh.current && planetsMoving) mesh.current.rotation.y += dt * (p.day_h < 0 ? -0.05 : 0.05);
     if (mesh.current) {
       const target = selectedKey === p.key ? 1.18 : 1.0;
-      mesh.current.scale.setScalar(
-        THREE.MathUtils.lerp(mesh.current.scale.x, target, 0.15)
-      );
+      mesh.current.scale.setScalar(THREE.MathUtils.lerp(mesh.current.scale.x, target, 0.15));
     }
   });
 
   return (
     <group ref={group} frustumCulled={false}>
       {showTrails && planetsMoving && (
-        <Trail
-          width={0.08}
-          color={new THREE.Color(p.color)}
-          length={140}
-          decay={1}
-          attenuation={(t) => t}
-          target={group}
-        />
+        <Trail width={0.08} color={new THREE.Color(p.color)} length={140} decay={1} attenuation={(t)=>t} target={group} />
       )}
-      <mesh
-        ref={mesh}
-        castShadow
-        receiveShadow
-        onClick={() => onSelect && onSelect(p)}
-        frustumCulled={false}
-      >
+      <mesh ref={mesh} castShadow receiveShadow onClick={() => onSelect && onSelect(p)} frustumCulled={false}>
         <sphereGeometry args={[radius, 48, 48]} />
-        {map ? (
-          <meshBasicMaterial map={map} toneMapped={false} />
-        ) : (
-          <meshStandardMaterial color={p.color} roughness={0.8} metalness={0} />
-        )}
+        {map
+          ? <meshBasicMaterial map={map} toneMapped={false} />
+          : <meshStandardMaterial color={p.color} roughness={0.8} metalness={0} />}
       </mesh>
       {p.ring && (
         <mesh rotation={[Math.PI / 2.4, 0, 0]} frustumCulled={false}>
           <ringGeometry args={[radius * 1.7, radius * 3.0, 96]} />
-          {ringMap ? (
-            <meshBasicMaterial
-              map={ringMap}
-              transparent
-              opacity={0.9}
-              side={THREE.DoubleSide}
-              toneMapped={false}
-            />
-          ) : (
-            <meshBasicMaterial
-              color={"#d9c9a5"}
-              transparent
-              opacity={0.85}
-              side={THREE.DoubleSide}
-              toneMapped={false}
-            />
-          )}
+          {ringMap
+            ? <meshBasicMaterial map={ringMap} transparent opacity={0.9} side={THREE.DoubleSide} toneMapped={false} />
+            : <meshBasicMaterial color={"#d9c9a5"} transparent opacity={0.85} side={THREE.DoubleSide} toneMapped={false} />
+          }
         </mesh>
       )}
-      <Text
-        position={[0, radius * 1.6, 0]}
-        fontSize={Math.max(0.3, radius * 0.35)}
-        anchorX="center"
-        anchorY="middle"
-      >
+      <Text position={[0, radius * 1.6, 0]} fontSize={Math.max(0.3, radius * 0.35)} anchorX="center" anchorY="middle">
         {p.key}
       </Text>
 
@@ -560,21 +359,15 @@ function Planet({
 /* =================== Meteoroides =================== */
 function Meteors({ count = 70, radius = 260 }) {
   const speeds = useMemo(
-    () =>
-      new Float32Array(
-        Array.from({ length: count }, () =>
-          (Math.random() * 0.6 + 0.2) * (Math.random() < 0.5 ? -1 : 1)
-        )
-      ),
+    () => new Float32Array(Array.from({ length: count }, () => (Math.random()*0.6+0.2) * (Math.random()<0.5?-1:1))),
     [count]
   );
   const positions = useMemo(
-    () =>
-      Array.from({ length: count }, () => [
-        (Math.random() - 0.5) * radius,
-        (Math.random() - 0.5) * 10,
-        (Math.random() - 0.5) * radius,
-      ]),
+    () => Array.from({ length: count }, () => [
+      (Math.random() - 0.5) * radius,
+      (Math.random() - 0.5) * 10,
+      (Math.random() - 0.5) * radius,
+    ]),
     [count, radius]
   );
 
@@ -586,15 +379,8 @@ function Meteors({ count = 70, radius = 260 }) {
       const v = speeds[i];
       m.position.x += v * dt * 10;
       m.position.z += v * dt * 10;
-      if (
-        Math.abs(m.position.x) > radius / 2 ||
-        Math.abs(m.position.z) > radius / 2
-      ) {
-        m.position.set(
-          (Math.random() - 0.5) * radius,
-          (Math.random() - 0.5) * 10,
-          (-radius / 2) * Math.sign(v || 1)
-        );
+      if (Math.abs(m.position.x) > radius/2 || Math.abs(m.position.z) > radius/2) {
+        m.position.set((Math.random()-0.5)*radius, (Math.random()-0.5)*10, -radius/2 * Math.sign(v || 1));
       }
     }
   });
@@ -604,15 +390,13 @@ function Meteors({ count = 70, radius = 260 }) {
       <Instances limit={count} range={count}>
         <sphereGeometry args={[0.06, 8, 8]} />
         <meshStandardMaterial roughness={1} metalness={0} />
-        {positions.map((p, i) => (
-          <Instance key={i} position={p} />
-        ))}
+        {positions.map((p, i) => (<Instance key={i} position={p} />))}
       </Instances>
     </group>
   );
 }
 
-/* =================== Medidas visuales Sol→planeta =================== */
+/* =================== Medidas visuales Sol→planeta (solo km) =================== */
 function PlanetMeasureLine({ planetKey, planetRefs, color, au }) {
   const [pts, setPts] = useState(null);
   const [labelPos, setLabelPos] = useState(new THREE.Vector3());
@@ -621,12 +405,11 @@ function PlanetMeasureLine({ planetKey, planetRefs, color, au }) {
     if (!ref) return;
     const planetPos = new THREE.Vector3();
     ref.getWorldPosition(planetPos);
-    setPts([new THREE.Vector3(0, 0, 0), planetPos.clone()]);
+    setPts([new THREE.Vector3(0,0,0), planetPos.clone()]);
     setLabelPos(planetPos.clone().multiplyScalar(0.52));
   });
   if (!pts) return null;
 
-  // SOLO km
   const km = Math.round(au * AU_KM);
   const label = `${fmtKm(km)} km`;
 
@@ -642,17 +425,9 @@ function PlanetMeasureLine({ planetKey, planetRefs, color, au }) {
 
 /* =================== Tierra + Luna (Luna anidada) =================== */
 function EarthWithMoon({
-  maps,
-  speed,
-  scaleCfg,
-  onSelect,
-  selectedKey,
-  showTrails,
-  useRealMoonDistance,
-  planetsMoving,
-  planetRefCb,
+  maps, speed, scaleCfg, onSelect, selectedKey, showTrails, useRealMoonDistance, planetsMoving, planetRefCb
 }) {
-  const earth = PLANETS.find((p) => p.key === "Tierra");
+  const earth = PLANETS.find(p => p.key === "Tierra");
   const MOON_RADIUS_KM = 1737;
   const earthRadius = kmToSceneRadius(earth.radius_km, scaleCfg);
   const moonRadius = earthRadius * (MOON_RADIUS_KM / earth.radius_km);
@@ -660,25 +435,15 @@ function EarthWithMoon({
   const moonAngle = useRef(Math.random() * Math.PI * 2);
 
   useEffect(() => {
-    if (planetRefCb && moon.current) {
-      planetRefCb("Luna", moon.current);
-    }
+    if (planetRefCb && moon.current) planetRefCb("Luna", moon.current);
   }, [planetRefCb]);
 
-  const moonDistance = useRealMoonDistance
-    ? kmToSceneDistance(384_400, scaleCfg)
-    : earthRadius * 8;
+  const moonDistance = useRealMoonDistance ? kmToSceneDistance(384_400, scaleCfg) : earthRadius * 8;
 
   useFrame((_, dt) => {
     if (!moon.current) return;
-    if (planetsMoving) {
-      moonAngle.current += dt * 1.2;
-    }
-    moon.current.position.set(
-      Math.cos(moonAngle.current) * moonDistance,
-      0,
-      Math.sin(moonAngle.current) * moonDistance
-    );
+    if (planetsMoving) moonAngle.current += dt * 1.2;
+    moon.current.position.set(Math.cos(moonAngle.current) * moonDistance, 0, Math.sin(moonAngle.current) * moonDistance);
     if (planetsMoving) moon.current.rotation.y += 0.01;
   });
 
@@ -696,103 +461,65 @@ function EarthWithMoon({
       planetRefCb={planetRefCb}
     >
       <group ref={moon}>
-        <mesh
-          onClick={() =>
-            onSelect &&
-            onSelect({
-              key: "Luna",
-              type: "Satélite natural de la Tierra",
-              au: null,
-              period_y: null,
-              day_h: 655.7,
-              tempC: "≈−20 a 120 °C (superficie)",
-              life: "No",
-              formed: "Restos del impacto de Theia (~4.51 Ga)",
-              fact: "Siempre nos muestra la misma cara (acoplamiento de marea).",
-            })
-          }
-        >
+        <mesh onClick={() => onSelect && onSelect({
+          key: "Luna",
+          type: "Satélite natural de la Tierra",
+          au: null,
+          period_y: null,
+          day_h: 655.7,
+          tempC: "≈−20 a 120 °C (superficie)",
+          life: "No",
+          formed: "Restos del impacto de Theia (~4.51 Ga)",
+          fact: "Siempre nos muestra la misma cara (acoplamiento de marea).",
+        })}>
           <sphereGeometry args={[moonRadius, 48, 48]} />
-          {maps.moon ? (
-            <meshBasicMaterial map={maps.moon} toneMapped={false} />
-          ) : (
-            <meshStandardMaterial color="#aaa" />
-          )}
+          {maps.moon ? <meshBasicMaterial map={maps.moon} toneMapped={false} /> : <meshStandardMaterial color="#aaa" />}
         </mesh>
-        <Text
-          position={[0, moonRadius * 1.6, 0]}
-          fontSize={Math.max(0.22, moonRadius * 0.45)}
-          anchorX="center"
-          anchorY="middle"
-        >
-          Luna
-        </Text>
+        <Text position={[0, moonRadius * 1.6, 0]} fontSize={Math.max(0.22, moonRadius * 0.45)} anchorX="center" anchorY="middle">Luna</Text>
       </group>
     </Planet>
   );
 }
 
-/* =================== Sistema Solar (refs) =================== */
+/* =================== Escena: Sistema Solar (refs) =================== */
 const SolarSystem = forwardRef(function SolarSystem(
   {
-    maps,
-    speed,
-    scaleCfg,
-    moving,
-    sunSpeed,
-    swayAmp,
-    swayFreq,
-    onSelect,
-    selectedKey,
-    controlsRef,
-    useRealMoonDistance,
-    planetsMoving,
-    controlsAutoTarget,
-    showVisualMeasures,
-    dataMode, // no usado por la línea, lo dejamos por compat
+    maps, speed, scaleCfg, moving, sunSpeed, swayAmp, swayFreq,
+    onSelect, selectedKey, controlsRef, useRealMoonDistance, planetsMoving,
+    controlsAutoTarget, showVisualMeasures, dataMode,
   },
   ref
 ) {
   const solarRef = useRef();
   const sunRef = useRef();
   const planetRefs = useRef({});
-  const registerPlanetRef = (key, r) => {
-    if (r) planetRefs.current[key] = r;
-  };
+  const registerPlanetRef = (key, r) => { if (r) planetRefs.current[key] = r; };
 
-  useImperativeHandle(
-    ref,
-    () => ({
-      getWorldPositionOf(key) {
-        const obj = key === "Sol" ? sunRef.current : planetRefs.current[key];
-        if (!obj) return null;
-        const v = new THREE.Vector3();
-        obj.getWorldPosition(v);
-        return v;
-      },
-      getApproxPlanetRadius(key) {
-        if (key === "Sol") return scaleCfg.sunR;
-        const p = PLANETS.find((pp) => pp.key === key);
-        if (p) return kmToSceneRadius(p.radius_km, scaleCfg);
-        if (key === "Luna") {
-          const earthR = kmToSceneRadius(6371, scaleCfg);
-          return earthR * (1737 / 6371);
-        }
-        return 2;
-      },
-    }),
-    [scaleCfg]
-  );
+  useImperativeHandle(ref, () => ({
+    getWorldPositionOf(key) {
+      const obj = key === "Sol" ? sunRef.current : planetRefs.current[key];
+      if (!obj) return null;
+      const v = new THREE.Vector3();
+      obj.getWorldPosition(v);
+      return v;
+    },
+    getApproxPlanetRadius(key) {
+      if (key === "Sol") return scaleCfg.sunR;
+      const p = PLANETS.find((pp) => pp.key === key);
+      if (p) return kmToSceneRadius(p.radius_km, scaleCfg);
+      if (key === "Luna") {
+        const earthR = kmToSceneRadius(6371, scaleCfg);
+        return earthR * (1737 / 6371);
+      }
+      return 2;
+    },
+  }), [scaleCfg]);
 
   useFrame((state) => {
     if (!solarRef.current) return;
     if (moving) {
       const t = state.clock.getElapsedTime();
-      solarRef.current.position.set(
-        Math.sin(t * swayFreq) * swayAmp,
-        0,
-        -sunSpeed * t
-      );
+      solarRef.current.position.set(Math.sin(t * swayFreq) * swayAmp, 0, -sunSpeed * t);
       if (controlsRef?.current && controlsAutoTarget) {
         controlsRef.current.target.lerp(solarRef.current.position, 0.08);
         controlsRef.current.update();
@@ -801,7 +528,7 @@ const SolarSystem = forwardRef(function SolarSystem(
       solarRef.current.position.set(0, 0, 0);
       solarRef.current.rotation.set(0, 0, 0);
       if (controlsRef?.current && controlsAutoTarget) {
-        controlsRef.current.target.lerp(new THREE.Vector3(0, 0, 0), 0.12);
+        controlsRef.current.target.lerp(new THREE.Vector3(0,0,0), 0.12);
         controlsRef.current.update();
       }
     }
@@ -858,19 +585,14 @@ const SolarSystem = forwardRef(function SolarSystem(
   );
 });
 
-/* =================== Utilidades de datos (UI externa) =================== */
-function fmtKm(n) {
-  return n.toLocaleString("es-AR");
-}
-function diamInEarths(planet) {
-  return (planet.radius_km * 2) / EARTH_DIAM_KM;
-}
-function sizeDisplay(planet, dataMode) {
-  if (dataMode === "REAL_1_1")
-    return `${fmtKm(planet.radius_km * 2)} km (diámetro)`;
+/* =================== Utilidades (UI externa) =================== */
+function fmtKm(n){ return n.toLocaleString("es-AR"); }
+function diamInEarths(planet){ return (planet.radius_km*2) / EARTH_DIAM_KM; }
+function sizeDisplay(planet, dataMode){
+  if (dataMode === 'REAL_1_1') return `${fmtKm(planet.radius_km*2)} km (diámetro)`;
   return `${diamInEarths(planet).toFixed(2)} D⊕ (diámetro)`;
 }
-function distDisplayKm(au) {
+function distDisplayKm(au){
   const km = Math.round(au * AU_KM);
   return `${fmtKm(km)} km`;
 }
@@ -889,31 +611,15 @@ const IMPORTANT = {
     { label: "Distancia al Sol", value: "≈ 58 millones km (0,39 UA)" },
     { label: "Distancia mínima a la Tierra", value: "≈ 77 millones km" },
     { label: "Radio", value: "≈ 2.440 km" },
-    {
-      label: "Minerales",
-      value:
-        "Silicatos; pocos óxidos de Fe; sulfuros y metales; evidencias de grafito (MESSENGER)",
-    },
-    {
-      label: "Energías posibles",
-      value:
-        "Solar muy intensa (~7× Tierra); Geotérmica limitada; Eólica casi nula; Química (minerales)",
-    },
+    { label: "Minerales", value: "Silicatos; sulfuros y metales; evidencias de grafito" },
+    { label: "Energías posibles", value: "Solar muy intensa (~7× Tierra); Geotérmica limitada; Eólica casi nula" },
   ],
   Venus: [
     { label: "Distancia al Sol", value: "≈ 108 millones km (0,72 UA)" },
     { label: "Distancia mínima a la Tierra", value: "≈ 40 millones km" },
     { label: "Radio", value: "≈ 6.052 km" },
-    {
-      label: "Minerales",
-      value:
-        "Basaltos volcánicos; silicatos (feldespatos, piroxenos); sulfuros/pirita; óxidos de hierro",
-    },
-    {
-      label: "Energías posibles",
-      value:
-        "Solar intensa (limitada por atmósfera densa); Eólica en capas altas; Geotérmica; Química (CO₂, SO₂)",
-    },
+    { label: "Minerales", value: "Basaltos; silicatos; sulfuros/pirita; óxidos de hierro" },
+    { label: "Energías posibles", value: "Solar (limitada por atmósfera densa); Eólica en capas altas; Geotérmica" },
   ],
   Tierra: [
     { label: "Diámetro", value: "12.742 km" },
@@ -929,113 +635,37 @@ const IMPORTANT = {
     { label: "Atmósfera", value: "Tenue; ~95% CO₂" },
     { label: "Duración del día", value: "24 h 37 min" },
     { label: "Satélites", value: "2 (Fobos y Deimos)" },
-    {
-      label: "Dato curioso",
-      value: "Monte Olimpo: 22 km (el volcán más grande del Sistema Solar)",
-    },
-    {
-      label: "Energías viables",
-      value:
-        "Solar (afectada por tormentas); Nuclear (fisión tipo Kilopower, confiable); Eólica (baja densidad); Geotérmica (posible)",
-    },
-    {
-      label: "Recursos",
-      value: "Hielo de agua; CO₂ atmosférico; minerales y óxidos de hierro",
-    },
-    {
-      label: "Por qué no Venus",
-      value:
-        "Temperaturas y atmósfera de Venus son extremas; en Marte el día es similar, hay hielo y exploración exitosa con robots",
-    },
+    { label: "Dato curioso", value: "Monte Olimpo: 22 km (volcán más grande)" },
+    { label: "Energías viables", value: "Solar; Nuclear (Kilopower); Eólica baja; Geotérmica posible" },
+    { label: "Recursos", value: "Hielo; CO₂ atmosférico; minerales" },
   ],
   "Júpiter": [
     { label: "Distancia al Sol", value: "5,2 UA (≈ 778 millones km)" },
     { label: "Diámetro / Radio", value: "≈ 140.000 km / 71.492 km" },
     { label: "Composición", value: "≈90% H, ≈10% He (sin superficie sólida)" },
-    {
-      label: "Atmósfera",
-      value: "Bandas de nubes (amoníaco, hidrosulfuro y agua)",
-    },
-    {
-      label: "Campo magnético",
-      value:
-        "Muy intenso por hidrógeno metálico + rotación rápida (gran dínamo)",
-    },
-    {
-      label: "Lunas",
-      value:
-        "95 confirmadas; Europa destaca por posible océano subsuperficial (candidato a vida)",
-    },
-    {
-      label: "Recursos/energía",
-      value:
-        "Vientos > 500 km/h; hidrógeno metálico conductor; en Europa, energía undimotriz del océano",
-    },
+    { label: "Atmósfera", value: "Bandas de amoníaco/hidrosulfuro/agua" },
+    { label: "Campo magnético", value: "Muy intenso (hidrógeno metálico + rotación rápida)" },
   ],
   Saturno: [
     { label: "Distancia al Sol", value: "9,5 UA (≈ 1.430 millones km)" },
-    { label: "Diámetro / Radio", value: "≈ 116.000 km / 60.268 km" },
-    { label: "Composición", value: "Similar a Júpiter: H y He" },
     { label: "Anillos", value: "Hielo, roca y polvo" },
-    { label: "Atmósfera", value: "Vientos > 1.800 km/h" },
-    {
-      label: "Núcleo",
-      value:
-        "Difuso; elementos pesados y ‘hielos’ (agua, metano, amoníaco) a alta presión/temperatura",
-    },
-    {
-      label: "Lunas",
-      value:
-        "146; Titán con atmósfera densa y lagos de metano/etano líquido",
-    },
-    {
-      label: "Recursos/energía",
-      value:
-        "Hidrocarburos en Titán: metano/etano (combustible si se aporta oxígeno)",
-    },
+    { label: "Vientos", value: "Hasta > 1.800 km/h" },
   ],
   Urano: [
     { label: "Distancia al Sol", value: "≈ 3.000 millones km (19,2 UA)" },
-    { label: "Periodo orbital", value: "84 años" },
-    { label: "Inclinación", value: "≈ 98° (prácticamente acostado)" },
-    { label: "Temperatura media", value: "≈ −224 °C (el más frío)" },
-    { label: "Atmósfera", value: "Hidrógeno, helio y metano" },
-    { label: "Vientos", value: "Hasta ~900 km/h" },
-    {
-      label: "Campo magnético",
-      value: "Inclinado y desalineado respecto al eje de rotación",
-    },
-    {
-      label: "Energía posible",
-      value:
-        "Eólica (vientos), Magnética (campo irregular), Química (metano/H₂). Robots podrían instalar turbinas y recolectar gases",
-    },
+    { label: "Inclinación", value: "≈ 98° (casi acostado)" },
+    { label: "Temperatura media", value: "≈ −224 °C" },
   ],
   Neptuno: [
     { label: "Distancia al Sol", value: "≈ 4.500 millones km (30,05 UA)" },
-    { label: "Periodo orbital", value: "165 años" },
-    { label: "Temperatura media", value: "≈ −214 °C" },
-    { label: "Atmósfera", value: "Hidrógeno, helio y metano" },
     { label: "Vientos", value: "Hasta ~2.100 km/h (los más rápidos)" },
-    {
-      label: "Campo magnético",
-      value: "Muy fuerte y desalineado",
-    },
-    {
-      label: "Energía posible",
-      value:
-        "Eólica (mejor candidato), Magnética (campo potente), Química (metano/H₂ abundantes). Robots soportan el frío extremo",
-    },
   ],
 };
 
 /* =================== Panel de info =================== */
 function InfoPanel({ selected, onClose, dataMode, onFocus }) {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-    return () => setMounted(false);
-  }, [selected?.key]);
+  useEffect(() => { setMounted(true); return () => setMounted(false); }, [selected?.key]);
   if (!selected) return null;
   const distKm = selected.au ? selected.au * AU_KM : null;
   const vueltas = selected.au ? laps(distKm) : null;
@@ -1043,187 +673,52 @@ function InfoPanel({ selected, onClose, dataMode, onFocus }) {
   const important = IMPORTANT[selected.key] || null;
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        right: 16,
-        top: 16,
-        width: 400,
-        zIndex: 25,
-        color: "#dbeafe",
-        backdropFilter: "blur(8px)",
-        background: "rgba(10,20,40,.55)",
-        border: "1px solid rgba(148,163,184,.35)",
-        borderRadius: 16,
-        padding: 16,
-        boxShadow: "0 10px 30px rgba(0,0,0,.4)",
-        transform: mounted ? "translateY(0)" : "translateY(-10px)",
-        opacity: mounted ? 1 : 0,
-        transition: "opacity .35s ease, transform .35s ease",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 10,
-        }}
-      >
+    <div style={{
+      position:'fixed', right:16, top:16, width:400, zIndex:25, color:'#dbeafe',
+      backdropFilter:'blur(8px)', background:'rgba(10,20,40,.55)',
+      border:'1px solid rgba(148,163,184,.35)', borderRadius:16, padding:16,
+      boxShadow:'0 10px 30px rgba(0,0,0,.4)', transform: mounted ? "translateY(0)" : "translateY(-10px)",
+      opacity: mounted ? 1 : 0, transition: "opacity .35s ease, transform .35s ease"
+    }}>
+      <div style={{display:'flex',justifyContent:'space-between', alignItems:'center', marginBottom:10}}>
         <div>
-          <div
-            style={{
-              fontSize: 11,
-              opacity: 0.8,
-              letterSpacing: 1,
-              fontFamily: "Roboto Mono, monospace",
-            }}
-          >
-            ENCICLOPEDIA
-          </div>
-          <div
-            style={{
-              fontSize: 24,
-              fontWeight: 800,
-              letterSpacing: 1.5,
-              fontFamily: "Orbitron, sans-serif",
-            }}
-          >
-            {selected.key}
-          </div>
-          <div
-            style={{
-              fontSize: 12,
-              opacity: 0.85,
-              fontFamily: "Roboto Mono, monospace",
-            }}
-          >
-            {selected.type}
-          </div>
+          <div style={{fontSize:11, opacity:.8, letterSpacing:1, fontFamily:'Roboto Mono, monospace'}}>ENCICLOPEDIA</div>
+          <div style={{fontSize:24, fontWeight:800, letterSpacing:1.5, fontFamily:'Orbitron, sans-serif'}}>{selected.key}</div>
+          <div style={{fontSize:12, opacity:.85, fontFamily:'Roboto Mono, monospace'}}>{selected.type}</div>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button
-            onClick={() => onFocus && onFocus(selected.key)}
-            style={{
-              padding: "6px 10px",
-              borderRadius: 10,
-              border: "1px solid rgba(255,255,255,.25)",
-              background: "rgba(255,255,255,.15)",
-              color: "#fff",
-              fontFamily: "Roboto Mono, monospace",
-            }}
-          >
-            Ver de cerca
-          </button>
-          <button
-            onClick={onClose}
-            style={{
-              padding: "6px 10px",
-              borderRadius: 10,
-              border: "1px solid rgba(255,255,255,.25)",
-              background: "rgba(255,255,255,.08)",
-              color: "#fff",
-              fontFamily: "Roboto Mono, monospace",
-            }}
-          >
-            Cerrar
-          </button>
+        <div style={{display:'flex', gap:8}}>
+          <button onClick={() => onFocus && onFocus(selected.key)} style={{padding:'6px 10px', borderRadius:10, border:'1px solid rgba(255,255,255,.25)', background:'rgba(255,255,255,.15)', color:'#fff', fontFamily:'Roboto Mono, monospace'}}>Ver de cerca</button>
+          <button onClick={onClose} style={{padding:'6px 10px', borderRadius:10, border:'1px solid rgba(255,255,255,.25)', background:'rgba(255,255,255,.08)', color:'#fff', fontFamily:'Roboto Mono, monospace'}}>Cerrar</button>
         </div>
       </div>
 
-      <div
-        style={{
-          fontFamily: "Roboto Mono, monospace",
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 8,
-          fontSize: 12,
-          marginBottom: 12,
-        }}
-      >
-        {selected.au ? (
-          <>
-            <div style={{ opacity: 0.7 }}>Distancia media</div>
-            <div>{distDisplayKm(selected.au)}</div>
-          </>
-        ) : null}
-        <div style={{ opacity: 0.7 }}>Tamaño</div>{" "}
-        <div>{sizeDisplay(selected, dataMode)}</div>
-        <div style={{ opacity: 0.7 }}>Período orbital</div>{" "}
-        <div>{selected.period_y ? `${selected.period_y} años` : "—"}</div>
-        <div style={{ opacity: 0.7 }}>Rotación (día)</div>{" "}
-        <div>{selected.day_h ?? "—"} h</div>
-        <div style={{ opacity: 0.7 }}>Temperatura</div>{" "}
-        <div>{selected.tempC}</div>
-        <div style={{ opacity: 0.7 }}>Vida conocida</div>{" "}
-        <div>{selected.life}</div>
-        <div style={{ opacity: 0.7 }}>Formación</div>{" "}
-        <div>{selected.formed}</div>
+      <div style={{fontFamily:'Roboto Mono, monospace', display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, fontSize:12, marginBottom:12}}>
+        {selected.au ? (<>
+          <div style={{opacity:.7}}>Distancia media</div>
+          <div>{distDisplayKm(selected.au)}</div>
+        </>) : null}
+        <div style={{opacity:.7}}>Tamaño</div> <div>{sizeDisplay(selected, dataMode)}</div>
+        <div style={{opacity:.7}}>Período orbital</div> <div>{selected.period_y ? `${selected.period_y} años` : "—"}</div>
+        <div style={{opacity:.7}}>Rotación (día)</div> <div>{selected.day_h ?? "—"} h</div>
+        <div style={{opacity:.7}}>Temperatura</div> <div>{selected.tempC}</div>
+        <div style={{opacity:.7}}>Vida conocida</div> <div>{selected.life}</div>
+        <div style={{opacity:.7}}>Formación</div> <div>{selected.formed}</div>
       </div>
 
       {vueltas && (
-        <div
-          style={{
-            fontSize: 13,
-            lineHeight: 1.5,
-            background: "rgba(255,255,255,.06)",
-            padding: 10,
-            borderRadius: 12,
-            border: "1px dashed rgba(148,163,184,.35)",
-            fontFamily: "Roboto Mono, monospace",
-            marginBottom: 10,
-          }}
-        >
-          <div
-            style={{
-              fontWeight: 700,
-              marginBottom: 6,
-              fontFamily: "Orbitron, sans-serif",
-            }}
-          >
-            Analogía de distancia
-          </div>
-          <div>
-            Desde el Sol hasta <strong>{selected.key}</strong> hay unos{" "}
-            <strong>{vueltas.toLocaleString()}</strong> vueltas a la Tierra
-            (circunf. ≈ 40.075 km).
-          </div>
+        <div style={{fontSize:13, lineHeight:1.5, background:'rgba(255,255,255,.06)', padding:10, borderRadius:12, border:'1px dashed rgba(148,163,184,.35)', fontFamily:'Roboto Mono, monospace', marginBottom:10}}>
+          <div style={{fontWeight:700, marginBottom:6, fontFamily:'Orbitron, sans-serif'}}>Analogía de distancia</div>
+          <div>Desde el Sol hasta <strong>{selected.key}</strong> hay unos <strong>{vueltas.toLocaleString()}</strong> vueltas a la Tierra (circunf. ≈ 40.075 km).</div>
         </div>
       )}
 
-      {/* ===== Datos importantes (sin viñetas) ===== */}
       {important && (
-        <div
-          style={{
-            fontSize: 13,
-            lineHeight: 1.5,
-            background: "rgba(255,255,255,.06)",
-            padding: 12,
-            borderRadius: 12,
-            border: "1px solid rgba(148,163,184,.35)",
-            fontFamily: "Roboto Mono, monospace",
-          }}
-        >
-          <div
-            style={{
-              fontWeight: 800,
-              marginBottom: 8,
-              fontFamily: "Orbitron, sans-serif",
-            }}
-          >
-            Datos importantes
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "auto 1fr",
-              columnGap: 8,
-              rowGap: 6,
-            }}
-          >
+        <div style={{fontSize:13, lineHeight:1.5, background:'rgba(255,255,255,.06)', padding:12, borderRadius:12, border:'1px solid rgba(148,163,184,.35)', fontFamily:'Roboto Mono, monospace'}}>
+          <div style={{fontWeight:800, marginBottom:8, fontFamily:'Orbitron, sans-serif'}}>Datos importantes</div>
+          <div style={{display:'grid', gridTemplateColumns:'auto 1fr', columnGap:8, rowGap:6}}>
             {important.map((row, i) => (
               <React.Fragment key={i}>
-                <div style={{ opacity: 0.8 }}>{row.label}</div>
+                <div style={{opacity:.8}}>{row.label}</div>
                 <div>{row.value}</div>
               </React.Fragment>
             ))}
@@ -1235,93 +730,36 @@ function InfoPanel({ selected, onClose, dataMode, onFocus }) {
 }
 
 /* =================== Panel de distancias (cerrable) =================== */
-function DistancesPanel({ scaleCfg, visible, onClose }) {
-  const rows = useMemo(() => {
+function DistancesPanel({ scaleCfg, visible, onClose }){
+  const rows = useMemo(()=>{
     const arr = [];
-    for (let i = 0; i < PLANETS.length - 1; i++) {
-      const a = PLANETS[i],
-        b = PLANETS[i + 1];
-      const dAU = Math.abs(b.au - a.au),
-        dKM = dAU * AU_KM,
-        dScene = dKM * scaleCfg.distFactor;
-      arr.push({ from: a.key, to: b.key, dAU, dKM, dScene });
+    for(let i=0;i<PLANETS.length-1;i++){
+      const a = PLANETS[i], b = PLANETS[i+1];
+      const dAU = Math.abs(b.au - a.au), dKM = dAU * AU_KM, dScene = dKM * scaleCfg.distFactor;
+      arr.push({from:a.key, to:b.key, dAU, dKM, dScene});
     }
     return arr;
   }, [scaleCfg]);
 
-  if (!visible) return null;
+  if(!visible) return null;
   return (
-    <div
-      style={{
-        position: "fixed",
-        left: 16,
-        bottom: 16,
-        zIndex: 26,
-        color: "#e5f2ff",
-        backdropFilter: "blur(8px)",
-        background: "rgba(10,20,40,.55)",
-        border: "1px solid rgba(148,163,184,.35)",
-        borderRadius: 14,
-        padding: 12,
-        maxWidth: 420,
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 8,
-        }}
-      >
-        <div
-          style={{
-            fontWeight: 800,
-            fontFamily: "Orbitron, sans-serif",
-            letterSpacing: 1,
-          }}
-        >
-          Distancias entre planetas
-        </div>
-        <button
-          onClick={onClose}
-          title="Cerrar"
-          style={{
-            border: "1px solid rgba(255,255,255,.3)",
-            background: "rgba(255,255,255,.08)",
-            color: "#fff",
-            borderRadius: 8,
-            padding: "4px 8px",
-            fontFamily: "Roboto Mono, monospace",
-          }}
-        >
+    <div style={{
+      position:'fixed',left:16,bottom:16,zIndex:26,color:'#e5f2ff',
+      backdropFilter:'blur(8px)', background:'rgba(10,20,40,.55)', border:'1px solid rgba(148,163,184,.35)',
+      borderRadius:14, padding:12, maxWidth:420
+    }}>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
+        <div style={{fontWeight:800, fontFamily:'Orbitron, sans-serif', letterSpacing:1}}>Distancias entre planetas</div>
+        <button onClick={onClose} title="Cerrar"
+          style={{border:'1px solid rgba(255,255,255,.3)', background:'rgba(255,255,255,.08)', color:'#fff', borderRadius:8, padding:'4px 8px', fontFamily:'Roboto Mono, monospace'}}>
           ✕
         </button>
       </div>
-      <div
-        style={{
-          fontFamily: "Roboto Mono, monospace",
-          fontSize: 12,
-          lineHeight: 1.4,
-        }}
-      >
-        {rows.map((r, idx) => (
-          <div
-            key={idx}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "auto 1fr",
-              columnGap: 8,
-              marginBottom: 6,
-            }}
-          >
-            <div style={{ opacity: 0.85 }}>
-              {r.from} → {r.to}
-            </div>
-            <div>
-              {r.dAU.toFixed(2)} AU · {fmtKm(Math.round(r.dKM))} km{" "}
-              <span style={{ opacity: 0.75 }}>· escena ≈ {r.dScene.toFixed(2)} u</span>
-            </div>
+      <div style={{fontFamily:'Roboto Mono, monospace', fontSize:12, lineHeight:1.4}}>
+        {rows.map((r,idx)=> (
+          <div key={idx} style={{display:'grid', gridTemplateColumns:'auto 1fr', columnGap:8, marginBottom:6}}>
+            <div style={{opacity:.85}}>{r.from} → {r.to}</div>
+            <div>{r.dAU.toFixed(2)} AU · {fmtKm(Math.round(r.dKM))} km <span style={{opacity:.75}}>· escena ≈ {r.dScene.toFixed(2)} u</span></div>
           </div>
         ))}
       </div>
@@ -1330,65 +768,100 @@ function DistancesPanel({ scaleCfg, visible, onClose }) {
 }
 
 /* =================== Leyenda escala (info) =================== */
-function ScaleLegend({ scaleCfg }) {
+function ScaleLegend({ scaleCfg }){
   const kmPerSceneUnit = 1 / scaleCfg.distFactor;
   const kmPerSceneUnitSizes = 1 / scaleCfg.sizeFactor;
   return (
-    <div
-      style={{
-        position: "fixed",
-        left: 16,
-        bottom: 116,
-        zIndex: 20,
-        color: "#d1e9ff",
-        backdropFilter: "blur(8px)",
-        background: "rgba(0,0,0,.35)",
-        padding: 10,
-        borderRadius: 12,
-        border: "1px solid rgba(255,255,255,.2)",
-        fontFamily: "Roboto Mono, monospace",
-        pointerEvents: "none",
-      }}
-    >
-      <div style={{ fontSize: 11, opacity: 0.85 }}>RENDER</div>
-      <div style={{ fontWeight: 700 }}>
-        1 u (tamaño) ≈ {kmPerSceneUnitSizes.toLocaleString("es-AR")} km
-      </div>
-      <div style={{ fontWeight: 700 }}>
-        1 u (distancia) ≈ {kmPerSceneUnit.toLocaleString("es-AR")} km
-      </div>
+    <div style={{
+      position:'fixed', left:16, bottom:116, zIndex:20, color:'#d1e9ff',
+      backdropFilter:'blur(8px)', background:'rgba(0,0,0,.35)', padding:10, borderRadius:12,
+      border:'1px solid rgba(255,255,255,.2)', fontFamily:'Roboto Mono, monospace', pointerEvents:'none'
+    }}>
+      <div style={{fontSize:11, opacity:.85}}>RENDER</div>
+      <div style={{fontWeight:700}}>1 u (tamaño) ≈ {(kmPerSceneUnitSizes).toLocaleString('es-AR')} km</div>
+      <div style={{fontWeight:700}}>1 u (distancia) ≈ {(kmPerSceneUnit).toLocaleString('es-AR')} km</div>
     </div>
   );
 }
 
-/* =================== HUD (UI externa) — PLEGABLE + BOOST PLANETAS =================== */
+/* =================== EARTH LAYERS (Capas de la Tierra) =================== */
+function EarthLayers({ map, cut = 5.2, rotate = true, showLabels = true }) {
+  // Radios relativos usando 6371 km como 1.0
+  const R = 6.5; // radio de la Tierra en la escena (tamaño visual)
+  const rInnerCore = R * (1221 / 6371); // Núcleo interno
+  const rOuterCore = R * (3480 / 6371); // radio exterior del núcleo externo
+  const rMantle    = R * (6340 / 6371); // casi hasta la base de la corteza
+  const rCrust     = R * 1.0;           // 6371/6371
+
+  // Rotación
+  const g = useRef();
+  useFrame((_, dt) => {
+    if (rotate && g.current) g.current.rotation.y += dt * 0.2;
+  });
+
+  const label = (text, pos, size=0.4) => showLabels ? (
+    <Text position={pos} fontSize={size} anchorX="center" anchorY="middle">{text}</Text>
+  ) : null;
+
+  return (
+    <group ref={g}>
+      {/* Corte por phiLength (menor a 2π deja un "quesito" abierto) */}
+      {/* Corte vertical (phiLength=cut) */}
+      {/* Corte visible en todas las capas para ver el interior */}
+      {/* Corte = 5.2 rad (~298°) deja ~62° abierto */}
+      {/* Núcleo interno */}
+      <mesh>
+        <sphereGeometry args={[rInnerCore, 96, 96, 0, cut, 0, Math.PI]} />
+        <meshStandardMaterial color="#ffd966" emissive="#332200" roughness={0.5} metalness={0.1} />
+      </mesh>
+      {label("Núcleo interno", [0, rInnerCore + 0.4, 0])}
+
+      {/* Núcleo externo */}
+      <mesh>
+        <sphereGeometry args={[rOuterCore, 96, 96, 0, cut, 0, Math.PI]} />
+        <meshStandardMaterial color="#ffae42" transparent opacity={0.85} roughness={0.6} metalness={0.05} />
+      </mesh>
+      {label("Núcleo externo", [0, rOuterCore + 0.4, 0])}
+
+      {/* Manto */}
+      <mesh>
+        <sphereGeometry args={[rMantle, 96, 96, 0, cut, 0, Math.PI]} />
+        <meshStandardMaterial color="#e8591c" transparent opacity={0.65} roughness={0.7} metalness={0} />
+      </mesh>
+      {label("Manto", [0, rMantle + 0.4, 0])}
+
+      {/* Corteza (con textura si hay) */}
+      <mesh>
+        <sphereGeometry args={[rCrust, 128, 128, 0, cut, 0, Math.PI]} />
+        {map
+          ? <meshBasicMaterial map={map} toneMapped={false} transparent opacity={0.95} />
+          : <meshStandardMaterial color="#7bb6ff" transparent opacity={0.9} roughness={0.8} metalness={0} />
+        }
+      </mesh>
+      {label("Corteza", [0, rCrust + 0.5, 0])}
+    </group>
+  );
+}
+
+/* =================== HUD (UI externa) — PLEGABLE =================== */
 function HUD({
-  speed,
-  setSpeed,
-  modeKey,
-  setModeKey,
-  moving,
-  setMoving,
-  sunSpeed,
-  setSunSpeed,
-  scene,
-  setScene,
-  dataMode,
-  setDataMode,
-  showDistances,
-  setShowDistances,
-  useRealMoonDistance,
-  setUseRealMoonDistance,
-  planetsMoving,
-  setPlanetsMoving,
+  speed, setSpeed,
+  modeKey, setModeKey,
+  moving, setMoving,
+  sunSpeed, setSunSpeed,
+  scene, setScene,
+  dataMode, setDataMode,
+  showDistances, setShowDistances,
+  useRealMoonDistance, setUseRealMoonDistance,
+  planetsMoving, setPlanetsMoving,
   onJumpToKey,
-  showVisualMeasures,
-  setShowVisualMeasures,
+  showVisualMeasures, setShowVisualMeasures,
   open, setOpen,
-  /* NUEVO */
-  planetBoost, setPlanetBoost,
+  // Earth layers controls:
+  earthCut, setEarthCut,
+  earthRotate, setEarthRotate,
+  earthLabels, setEarthLabels,
 }) {
-  // Botón flotante cuando está cerrado
   if (!open) {
     return (
       <button
@@ -1407,7 +880,6 @@ function HUD({
     );
   }
 
-  // Tarjeta abierta
   return (
     <div
       style={{
@@ -1428,7 +900,7 @@ function HUD({
           padding: 12,
           borderRadius: 14,
           border: "1px solid rgba(255,255,255,.2)",
-          maxWidth: 420,
+          maxWidth: 460,
         }}
       >
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
@@ -1442,32 +914,18 @@ function HUD({
           </button>
         </div>
 
-        <div
-          style={{
-            fontWeight: 800,
-            fontFamily: "Orbitron, sans-serif",
-            marginBottom: 8,
-            letterSpacing: 1,
-          }}
-        >
-          ESCENA
-        </div>
+        {/* Selector de escena */}
+        <div style={{fontWeight:800, fontFamily:'Orbitron, sans-serif', marginBottom:8, letterSpacing:1}}>ESCENA</div>
         <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
           {Object.entries(MODES).map(([k, label]) => (
             <button
               key={k}
               onClick={() => setScene(k)}
               style={{
-                fontSize: 12,
-                padding: "6px 8px",
-                borderRadius: 10,
+                fontSize: 12, padding: "6px 8px", borderRadius: 10,
                 border: "1px solid rgba(255,255,255,.25)",
-                background:
-                  scene === k
-                    ? "rgba(255,255,255,.18)"
-                    : "rgba(255,255,255,.08)",
-                color: "#fff",
-                fontFamily: "Roboto Mono, monospace",
+                background: scene === k ? "rgba(255,255,255,.18)" : "rgba(255,255,255,.08)",
+                color: "#fff", fontFamily: "Roboto Mono, monospace",
               }}
             >
               {label}
@@ -1475,277 +933,85 @@ function HUD({
           ))}
         </div>
 
+        {/* Controles por escena */}
         {scene === "solar" && (
           <>
-            {/* IR A (incluye Luna) */}
-            <div
-              style={{
-                fontWeight: 800,
-                fontFamily: "Orbitron, sans-serif",
-                marginBottom: 8,
-                letterSpacing: 1,
-              }}
-            >
-              IR A
-            </div>
-            <div
-              style={{
-                display: "flex",
-                gap: 8,
-                flexWrap: "wrap",
-                marginBottom: 10,
-                maxWidth: 360,
-              }}
-            >
+            <div style={{fontWeight:800, fontFamily:'Orbitron, sans-serif', marginBottom:8, letterSpacing:1}}>IR A</div>
+            <div style={{display:"flex", gap:8, flexWrap:"wrap", marginBottom:10, maxWidth:360}}>
               {["Sol", "Luna", ...PLANETS.map((p) => p.key)].map((name) => (
-                <button
-                  key={name}
-                  onClick={() => onJumpToKey && onJumpToKey(name)}
-                  style={{
-                    fontSize: 12,
-                    padding: "6px 8px",
-                    borderRadius: 10,
-                    border: "1px solid rgba(255,255,255,.25)",
-                    background: "rgba(255,255,255,.08)",
-                    color: "#fff",
-                    fontFamily: "Roboto Mono, monospace",
-                  }}
-                >
+                <button key={name} onClick={() => onJumpToKey && onJumpToKey(name)}
+                  style={{fontSize:12,padding:"6px 8px",borderRadius:10,border:"1px solid rgba(255,255,255,.25)",background:"rgba(255,255,255,.08)", color:"#fff", fontFamily:"Roboto Mono, monospace"}}>
                   {name}
                 </button>
               ))}
             </div>
 
-            {/* MODO DE DATOS */}
-            <div
-              style={{
-                fontWeight: 800,
-                fontFamily: "Orbitron, sans-serif",
-                marginBottom: 8,
-                letterSpacing: 1,
-              }}
-            >
-              MODO DE DATOS
-            </div>
-            <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+            <div style={{fontWeight:800, fontFamily:'Orbitron, sans-serif', marginBottom:8, letterSpacing:1}}>MODO DE DATOS</div>
+            <div style={{display:"flex",gap:8,marginBottom:10, flexWrap:"wrap"}}>
               {Object.entries(DATA_MODES).map(([k, v]) => (
-                <button
-                  key={k}
-                  onClick={() => setDataMode(k)}
-                  style={{
-                    fontSize: 12,
-                    padding: "6px 8px",
-                    borderRadius: 10,
-                    border: "1px solid rgba(255,255,255,.25)",
-                    background:
-                      dataMode === k
-                        ? "rgba(255,255,255,.18)"
-                        : "rgba(255,255,255,.08)",
-                    color: "#fff",
-                    fontFamily: "Roboto Mono, monospace",
-                  }}
-                >
+                <button key={k} onClick={()=>setDataMode(k)}
+                  style={{fontSize:12,padding:"6px 8px",borderRadius:10,border:"1px solid rgba(255,255,255,.25)",background: dataMode===k? "rgba(255,255,255,.18)":"rgba(255,255,255,.08)", color:"#fff", fontFamily:"Roboto Mono, monospace"}}>
                   {v.label}
                 </button>
               ))}
             </div>
 
-            {/* ESCALA (RENDER) */}
-            <div
-              style={{
-                fontWeight: 800,
-                fontFamily: "Orbitron, sans-serif",
-                marginBottom: 8,
-                letterSpacing: 1,
-              }}
-            >
-              ESCALA (RENDER)
-            </div>
-            <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+            <div style={{fontWeight:800, fontFamily:'Orbitron, sans-serif', marginBottom:8, letterSpacing:1}}>ESCALA (RENDER)</div>
+            <div style={{display:"flex",gap:8,marginBottom:10, flexWrap:"wrap"}}>
               {Object.entries(RENDER_SCALES_BASE).map(([k, v]) => (
-                <button
-                  key={k}
-                  onClick={() => setModeKey(k)}
-                  style={{
-                    fontSize: 12,
-                    padding: "6px 8px",
-                    borderRadius: 10,
-                    border: "1px solid rgba(255,255,255,.25)",
-                    background:
-                      modeKey === k
-                        ? "rgba(255,255,255,.18)"
-                        : "rgba(255,255,255,.08)",
-                    color: "#fff",
-                    fontFamily: "Roboto Mono, monospace",
-                  }}
-                >
+                <button key={k} onClick={()=>setModeKey(k)}
+                  style={{fontSize:12,padding:"6px 8px",borderRadius:10,border:"1px solid rgba(255,255,255,.25)",background: modeKey===k? "rgba(255,255,255,.18)":"rgba(255,255,255,.08)", color:"#fff", fontFamily:"Roboto Mono, monospace"}}>
                   {v.name}
                 </button>
               ))}
             </div>
 
-            {/* TAMAÑO DE PLANETAS (solo planetas) */}
-            <div
-              style={{
-                fontWeight: 800,
-                fontFamily: "Orbitron, sans-serif",
-                marginTop: 8,
-                marginBottom: 8,
-                letterSpacing: 1,
-              }}
-            >
-              TAMAÑO DE PLANETAS (solo planetas)
-            </div>
-            <div style={{ fontFamily: "Roboto Mono, monospace", marginBottom: 6 }}>
-              x{planetBoost.toFixed(0)}
-            </div>
-            <input
-              type="range"
-              min={1}
-              max={40}
-              step={1}
-              value={planetBoost}
-              onChange={(e) => setPlanetBoost(parseInt(e.target.value, 10))}
-              style={{ width: 260 }}
-            />
-            <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
-              {[1, 3, 5, 10, 20, 30, 40].map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setPlanetBoost(v)}
-                  style={{
-                    fontSize: 12,
-                    padding: "6px 8px",
-                    borderRadius: 10,
-                    border: "1px solid rgba(255,255,255,.25)",
-                    background:
-                      planetBoost === v ? "rgba(255,255,255,.18)" : "rgba(255,255,255,.08)",
-                    color: "#fff",
-                    fontFamily: "Roboto Mono, monospace",
-                  }}
-                >
-                  x{v}
-                </button>
-              ))}
-            </div>
-            <div style={{ fontSize: 12, opacity: 0.75, marginTop: 6, fontFamily: "Roboto Mono, monospace" }}>
-              No cambia el Sol ni las distancias.
-            </div>
+            <div style={{fontFamily:'Roboto Mono, monospace', marginBottom:6}}>Velocidad orbital: x{speed.toFixed(1)}</div>
+            <input type="range" min={0.1} max={20} step={0.1} value={speed} onChange={(e)=>setSpeed(parseFloat(e.target.value))} style={{width:260}}/>
 
-            {/* Controles */}
-            <div style={{ fontFamily: "Roboto Mono, monospace", marginTop: 14, marginBottom: 6 }}>
-              Velocidad orbital: x{speed.toFixed(1)}
-            </div>
-            <input
-              type="range"
-              min={0.1}
-              max={20}
-              step={0.1}
-              value={speed}
-              onChange={(e) => setSpeed(parseFloat(e.target.value))}
-              style={{ width: 260 }}
-            />
-
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                marginTop: 12,
-                fontFamily: "Roboto Mono, monospace",
-              }}
-            >
-              <input
-                id="planetsMove"
-                type="checkbox"
-                checked={planetsMoving}
-                onChange={(e) => setPlanetsMoving(e.target.checked)}
-              />
+            <div style={{display:'flex', alignItems:'center', gap:10, marginTop:12, fontFamily:'Roboto Mono, monospace'}}>
+              <input id="planetsMove" type="checkbox" checked={planetsMoving} onChange={(e)=>setPlanetsMoving(e.target.checked)} />
               <label htmlFor="planetsMove">Planetas en movimiento (órbita + rotación)</label>
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                marginTop: 8,
-                fontFamily: "Roboto Mono, monospace",
-              }}
-            >
-              <input
-                id="moveSun"
-                type="checkbox"
-                checked={moving}
-                onChange={(e) => setMoving(e.target.checked)}
-              />
+            <div style={{display:'flex', alignItems:'center', gap:10, marginTop:8, fontFamily:'Roboto Mono, monospace'}}>
+              <input id="moveSun" type="checkbox" checked={moving} onChange={(e)=>setMoving(e.target.checked)} />
               <label htmlFor="moveSun">Sol en movimiento (trayectorias helicoidales)</label>
             </div>
-            <div style={{ fontSize: 12, opacity: 0.9, fontFamily: "Roboto Mono, monospace" }}>
-              Velocidad del Sol: {sunSpeed.toFixed(1)}
-            </div>
-            <input
-              type="range"
-              min={0.5}
-              max={15}
-              step={0.1}
-              value={sunSpeed}
-              onChange={(e) => setSunSpeed(parseFloat(e.target.value))}
-              style={{ width: 260 }}
-            />
+            <div style={{fontSize:12,opacity:.9, fontFamily:'Roboto Mono, monospace'}}>Velocidad del Sol: {sunSpeed.toFixed(1)}</div>
+            <input type="range" min={0.5} max={15} step={0.1} value={sunSpeed} onChange={(e)=>setSunSpeed(parseFloat(e.target.value))} style={{width:260}}/>
 
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                marginTop: 12,
-                fontFamily: "Roboto Mono, monospace",
-              }}
-            >
-              <input
-                id="distTable"
-                type="checkbox"
-                checked={showDistances}
-                onChange={(e) => setShowDistances(e.target.checked)}
-              />
+            <div style={{display:'flex', alignItems:'center', gap:10, marginTop:12, fontFamily:'Roboto Mono, monospace'}}>
+              <input id="distTable" type="checkbox" checked={showDistances} onChange={(e)=>setShowDistances(e.target.checked)} />
               <label htmlFor="distTable">Mostrar tabla de distancias planeta→planeta</label>
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                marginTop: 8,
-                fontFamily: "Roboto Mono, monospace",
-              }}
-            >
-              <input
-                id="moonReal"
-                type="checkbox"
-                checked={useRealMoonDistance}
-                onChange={(e) => setUseRealMoonDistance(e.target.checked)}
-              />
+            <div style={{display:'flex', alignItems:'center', gap:10, marginTop:8, fontFamily:'Roboto Mono, monospace'}}>
+              <input id="moonReal" type="checkbox" checked={useRealMoonDistance} onChange={(e)=>setUseRealMoonDistance(e.target.checked)} />
               <label htmlFor="moonReal">Usar distancia Tierra–Luna real (384.400 km)</label>
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                marginTop: 8,
-                fontFamily: "Roboto Mono, monospace",
-              }}
-            >
-              <input
-                id="visualMeasures"
-                type="checkbox"
-                checked={showVisualMeasures}
-                onChange={(e) => setShowVisualMeasures(e.target.checked)}
-              />
+            <div style={{display:'flex', alignItems:'center', gap:10, marginTop:8, fontFamily:'Roboto Mono, monospace'}}>
+              <input id="visualMeasures" type="checkbox" checked={showVisualMeasures} onChange={(e)=>setShowVisualMeasures(e.target.checked)} />
               <label htmlFor="visualMeasures">Mostrar medidas visuales Sol→planetas</label>
+            </div>
+          </>
+        )}
+
+        {scene === "earth" && (
+          <>
+            <div style={{fontWeight:800, fontFamily:'Orbitron, sans-serif', marginBottom:8, letterSpacing:1}}>CAPAS DE LA TIERRA</div>
+            <div style={{fontFamily:'Roboto Mono, monospace', marginBottom:6}}>Apertura del corte: {earthCut.toFixed(2)} rad</div>
+            <input type="range" min={3.6} max={6.2} step={0.02} value={earthCut} onChange={(e)=>setEarthCut(parseFloat(e.target.value))} style={{width:260}}/>
+
+            <div style={{display:'flex', alignItems:'center', gap:10, marginTop:12, fontFamily:'Roboto Mono, monospace'}}>
+              <input id="earthRot" type="checkbox" checked={earthRotate} onChange={(e)=>setEarthRotate(e.target.checked)} />
+              <label htmlFor="earthRot">Rotar capas</label>
+            </div>
+
+            <div style={{display:'flex', alignItems:'center', gap:10, marginTop:8, fontFamily:'Roboto Mono, monospace'}}>
+              <input id="earthLbl" type="checkbox" checked={earthLabels} onChange={(e)=>setEarthLabels(e.target.checked)} />
+              <label htmlFor="earthLbl">Mostrar etiquetas</label>
             </div>
           </>
         )}
@@ -1754,19 +1020,13 @@ function HUD({
   );
 }
 
-/* =================== Escena con fly-to =================== */
+/* =================== Escena con fly-to + Earth Layers =================== */
 const Scene = forwardRef(function Scene(
   {
-    scene,
-    speed,
-    moving,
-    sunSpeed,
-    onSelect,
-    useRealMoonDistance,
-    scaleCfg,
-    planetsMoving,
-    dataMode,
-    showVisualMeasures,
+    scene, speed, moving, sunSpeed, onSelect, useRealMoonDistance, scaleCfg,
+    planetsMoving, dataMode, showVisualMeasures,
+    // Earth layers:
+    earthCut, earthRotate, earthLabels
   },
   ref
 ) {
@@ -1778,13 +1038,9 @@ const Scene = forwardRef(function Scene(
   const [controlsAutoTarget, setControlsAutoTarget] = useState(true);
 
   const flyRef = useRef({
-    active: false,
-    t: 0,
-    dur: 1.1,
-    fromPos: new THREE.Vector3(),
-    toPos: new THREE.Vector3(),
-    fromTarget: new THREE.Vector3(),
-    toTarget: new THREE.Vector3(),
+    active: false, t: 0, dur: 1.1,
+    fromPos: new THREE.Vector3(), toPos: new THREE.Vector3(),
+    fromTarget: new THREE.Vector3(), toTarget: new THREE.Vector3(),
   });
 
   const startFly = (targetPos, distance) => {
@@ -1794,10 +1050,7 @@ const Scene = forwardRef(function Scene(
     );
     if (dir.lengthSq() < 1e-6) dir.set(0, 0, 1);
     dir.normalize();
-    const toPos = new THREE.Vector3().addVectors(
-      targetPos,
-      dir.multiplyScalar(distance)
-    );
+    const toPos = new THREE.Vector3().addVectors(targetPos, dir.multiplyScalar(distance));
 
     flyRef.current.active = true;
     flyRef.current.t = 0;
@@ -1821,28 +1074,23 @@ const Scene = forwardRef(function Scene(
     if (f.t >= 1) f.active = false;
   });
 
-  useImperativeHandle(
-    ref,
-    () => ({
-      focusOn(key) {
-        if (!solarSystemRef.current) return;
-        const pos = solarSystemRef.current.getWorldPositionOf(key);
-        if (!pos) return;
-        const r = solarSystemRef.current.getApproxPlanetRadius(key);
-        // MÁS CERCA
-        const dist = THREE.MathUtils.clamp(r * 4.0, 2.5, 80);
-
-        setControlsAutoTarget(false);
-        startFly(pos, dist);
-      },
-    }),
-    []
-  );
+  useImperativeHandle(ref, () => ({
+    focusOn(key) {
+      if (!solarSystemRef.current) return;
+      const pos = solarSystemRef.current.getWorldPositionOf(key);
+      if (!pos) return;
+      const r = solarSystemRef.current.getApproxPlanetRadius(key);
+      const dist = THREE.MathUtils.clamp(r * 4.0, 2.5, 80); // más cerca
+      setControlsAutoTarget(false);
+      startFly(pos, dist);
+    }
+  }), []);
 
   return (
     <>
       <Stars radius={1200} depth={200} count={18000} factor={4} fade />
       <ambientLight intensity={0.35} />
+      <directionalLight position={[8, 12, 5]} intensity={0.9} />
 
       {scene === "solar" && (
         <SolarSystem
@@ -1865,14 +1113,16 @@ const Scene = forwardRef(function Scene(
         />
       )}
 
+      {scene === "earth" && (
+        <group position={[0, 0, 0]}>
+          <EarthLayers map={maps.earth} cut={earthCut} rotate={earthRotate} showLabels={earthLabels} />
+          {/* Título flotante */}
+          <Text position={[0, 8, 0]} fontSize={0.9} anchorX="center" anchorY="middle">Capas de la Tierra</Text>
+        </group>
+      )}
+
       <Meteors count={70} radius={260} />
-      <OrbitControls
-        ref={controls}
-        enableDamping
-        dampingFactor={0.08}
-        maxDistance={3000}
-        minDistance={2.5}
-      />
+      <OrbitControls ref={controls} enableDamping dampingFactor={0.08} maxDistance={3000} minDistance={2.5} />
       <AdaptiveDpr pixelated />
       <Preload all />
     </>
@@ -1880,7 +1130,7 @@ const Scene = forwardRef(function Scene(
 });
 
 /* =================== App =================== */
-const MODES = { solar: "Sistema Solar" };
+const MODES = { solar: "Sistema Solar", earth: "Capas de la Tierra" };
 
 export default function App() {
   useInjectFonts();
@@ -1895,11 +1145,7 @@ export default function App() {
         "position:fixed;inset:16px auto auto 16px;z-index:99999;background:#111a;border:1px solid #f55a;color:#ffd;padding:10px 12px;border-radius:10px;font:12px/1.35 'Roboto Mono',monospace;max-width:600px";
       el.textContent = "Runtime error: " + msg;
       document.body.appendChild(el);
-      setTimeout(() => {
-        try {
-          document.body.removeChild(el);
-        } catch {}
-      }, 5000);
+      setTimeout(()=>{ try{ document.body.removeChild(el);}catch{} }, 5000);
     };
     window.addEventListener("error", handler);
     window.addEventListener("unhandledrejection", handler);
@@ -1910,54 +1156,51 @@ export default function App() {
   }, []);
 
   const [scene, setScene] = useState("solar");
-  const [modeKey, setModeKey] = useState("didactica"); // arranca compacta
+  const [modeKey, setModeKey] = useState("didactica");
   const [dataMode, setDataMode] = useState("REAL_1_1");
 
-  // Arranque estático
+  // Solar
   const [speed, setSpeed] = useState(3.0);
-  const [moving, setMoving] = useState(false); // Sol detenido
+  const [moving, setMoving] = useState(false);
   const [sunSpeed, setSunSpeed] = useState(5.0);
-  const [planetsMoving, setPlanetsMoving] = useState(false); // Planetas detenidos
+  const [planetsMoving, setPlanetsMoving] = useState(false);
 
   const [selected, setSelected] = useState(null);
-  const [showDistances, setShowDistances] = useState(false); // oculto al inicio
+  const [showDistances, setShowDistances] = useState(false);          // oculto al inicio
   const [useRealMoonDistance, setUseRealMoonDistance] = useState(true);
-  const [showVisualMeasures, setShowVisualMeasures] = useState(false); // oculto al inicio
+  const [showVisualMeasures, setShowVisualMeasures] = useState(false); // oculto al inicio (solo km cuando se active)
 
-  const [hudOpen, setHudOpen] = useState(false); // HUD plegable: cerrado al inicio
+  // Earth Layers
+  const [earthCut, setEarthCut] = useState(5.2);  // 1.2–6.28 rad; 5.2 deja "ventana" agradable
+  const [earthRotate, setEarthRotate] = useState(true);
+  const [earthLabels, setEarthLabels] = useState(true);
 
-  // >>> NUEVO: boost de planetas (x1 = real)
-  const [planetBoost, setPlanetBoost] = useState(1);
+  // HUD plegable
+  const [hudOpen, setHudOpen] = useState(false);
 
-  // aplicar boost a la escala (solo afecta tamaños de planetas/lunas)
-  const scaleCfg = useMemo(
-    () => ({ ...buildScale(modeKey), planetBoost }),
-    [modeKey, planetBoost]
-  );
-
+  const scaleCfg = useMemo(() => buildScale(modeKey), [modeKey]);
   const sceneRef = useRef();
 
   const handleSelect = (obj) => {
     setSelected(obj);
-    if (obj?.key) sceneRef.current?.focusOn(obj.key);
+    if (obj?.key && scene === "solar") sceneRef.current?.focusOn(obj.key);
   };
 
   const jumpToKey = (key) => {
     if (key === "Sol") handleSelect(SUN);
-    else if (key === "Luna")
-      handleSelect({
-        key: "Luna",
-        type: "Satélite natural de la Tierra",
-        au: null,
-        period_y: null,
-        day_h: 655.7,
-        tempC: "≈−20 a 120 °C (superficie)",
-        life: "No",
-        formed: "Restos del impacto de Theia (~4.51 Ga)",
-        fact: "Siempre nos muestra la misma cara (acoplamiento de marea).",
-      });
+    else if (key === "Luna") handleSelect({
+      key: "Luna",
+      type: "Satélite natural de la Tierra",
+      au: null,
+      period_y: null,
+      day_h: 655.7,
+      tempC: "≈−20 a 120 °C (superficie)",
+      life: "No",
+      formed: "Restos del impacto de Theia (~4.51 Ga)",
+      fact: "Siempre nos muestra la misma cara (acoplamiento de marea).",
+    });
     else {
-      const p = PLANETS.find((pp) => pp.key === key);
+      const p = PLANETS.find(pp => pp.key === key);
       if (p) handleSelect(p);
     }
   };
@@ -1966,48 +1209,32 @@ export default function App() {
     <div style={{ width: "100%", height: "100vh", background: "black" }}>
       {/* UI */}
       <HUD
-        speed={speed}
-        setSpeed={setSpeed}
-        modeKey={modeKey}
-        setModeKey={setModeKey}
-        moving={moving}
-        setMoving={setMoving}
-        sunSpeed={sunSpeed}
-        setSunSpeed={setSunSpeed}
-        scene={scene}
-        setScene={(s) => {
-          setScene(s);
-          setSelected(null);
-        }}
-        dataMode={dataMode}
-        setDataMode={setDataMode}
-        showDistances={showDistances}
-        setShowDistances={setShowDistances}
-        useRealMoonDistance={useRealMoonDistance}
-        setUseRealMoonDistance={setUseRealMoonDistance}
-        planetsMoving={planetsMoving}
-        setPlanetsMoving={setPlanetsMoving}
+        speed={speed} setSpeed={setSpeed}
+        modeKey={modeKey} setModeKey={setModeKey}
+        moving={moving} setMoving={setMoving}
+        sunSpeed={sunSpeed} setSunSpeed={setSunSpeed}
+        scene={scene} setScene={(s)=>{ setScene(s); setSelected(null); }}
+        dataMode={dataMode} setDataMode={setDataMode}
+        showDistances={showDistances} setShowDistances={setShowDistances}
+        useRealMoonDistance={useRealMoonDistance} setUseRealMoonDistance={setUseRealMoonDistance}
+        planetsMoving={planetsMoving} setPlanetsMoving={setPlanetsMoving}
         onJumpToKey={jumpToKey}
-        showVisualMeasures={showVisualMeasures}
-        setShowVisualMeasures={setShowVisualMeasures}
-        open={hudOpen}
-        setOpen={setHudOpen}
-        /* NUEVO */
-        planetBoost={planetBoost}
-        setPlanetBoost={setPlanetBoost}
+        showVisualMeasures={showVisualMeasures} setShowVisualMeasures={setShowVisualMeasures}
+        open={hudOpen} setOpen={setHudOpen}
+        earthCut={earthCut} setEarthCut={setEarthCut}
+        earthRotate={earthRotate} setEarthRotate={setEarthRotate}
+        earthLabels={earthLabels} setEarthLabels={setEarthLabels}
       />
-      <InfoPanel
-        selected={selected}
-        onClose={() => setSelected(null)}
-        dataMode={dataMode}
-        onFocus={(k) => sceneRef.current?.focusOn(k)}
-      />
-      <ScaleLegend scaleCfg={scaleCfg} />
-      <DistancesPanel
-        scaleCfg={scaleCfg}
-        visible={showDistances}
-        onClose={() => setShowDistances(false)}
-      />
+      {scene === "solar" && (
+        <InfoPanel
+          selected={selected}
+          onClose={() => setSelected(null)}
+          dataMode={dataMode}
+          onFocus={(k) => sceneRef.current?.focusOn(k)}
+        />
+      )}
+      {scene === "solar" && <ScaleLegend scaleCfg={scaleCfg} />}
+      {scene === "solar" && <DistancesPanel scaleCfg={scaleCfg} visible={showDistances} onClose={()=>setShowDistances(false)} />}
 
       {/* Canvas */}
       <Canvas
@@ -2022,9 +1249,7 @@ export default function App() {
           logarithmicDepthBuffer: true,
           preserveDrawingBuffer: false,
         }}
-        onCreated={({ gl }) => {
-          gl.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
-        }}
+        onCreated={({ gl }) => { gl.setPixelRatio(Math.min(window.devicePixelRatio, 1.75)); }}
         shadows
       >
         <Suspense fallback={null}>
@@ -2040,6 +1265,9 @@ export default function App() {
             planetsMoving={planetsMoving}
             dataMode={dataMode}
             showVisualMeasures={showVisualMeasures}
+            earthCut={earthCut}
+            earthRotate={earthRotate}
+            earthLabels={earthLabels}
           />
         </Suspense>
       </Canvas>
