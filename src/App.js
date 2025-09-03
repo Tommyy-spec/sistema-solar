@@ -784,103 +784,61 @@ function ScaleLegend({ scaleCfg }){
   );
 }
 
-/* =================== Señalética (línea + etiqueta) =================== */
-function LabelWithLine({ text, from, to }) {
-  return (
-    <group>
-      <Line points={[from, to]} color="#93c5fd" lineWidth={1.2} />
-      <Text position={to} fontSize={0.6} color="#e5f2ff" anchorX="left" anchorY="middle">
-        {text}
-      </Text>
-    </group>
-  );
-}
+/* =================== EARTH LAYERS (Capas de la Tierra) =================== */
+function EarthLayers({ map, cut = 5.2, rotate = true, showLabels = true }) {
+  // Radios relativos usando 6371 km como 1.0
+  const R = 6.5; // radio de la Tierra en la escena (tamaño visual)
+  const rInnerCore = R * (1221 / 6371); // Núcleo interno
+  const rOuterCore = R * (3480 / 6371); // radio exterior del núcleo externo
+  const rMantle    = R * (6340 / 6371); // casi hasta la base de la corteza
+  const rCrust     = R * 1.0;           // 6371/6371
 
-/* =================== EARTH LAYERS (Capas sólidas, sin cortes) =================== */
-/** Exploded view con 4 esferas completas (sin phiLength, sin transparencia).
- *  Colores sólidos, cada capa desplazada en X según "explode".
- */
-function EarthLayers({ explode = 1, rotate = true, showLabels = true }) {
-  // Tamaño base de la Tierra en la escena
-  const R = 6.5;
-
-  // Radios proporcionales (usando 6371 km de referencia)
-  const rInnerCore = R * (1221 / 6371); // núcleo interno
-  const rOuterCore = R * (3480 / 6371); // radio del núcleo externo (aprox. límite)
-  const rMantle    = R * (6340 / 6371); // límite del manto
-  const rCrust     = R * 1.0;           // corteza
-
-  // Offsets para "abrir" (exploded). explode en [0..1]
-  const offsets = {
-    crust:  0 * explode,
-    mantle: 1.4 * explode,
-    outer:  2.6 * explode,
-    inner:  3.6 * explode,
-  };
-
-  // Colores sólidos
-  const COLORS = {
-    crust:  "#4cc3ff",
-    mantle: "#ff7f50",
-    outer:  "#ffb347",
-    inner:  "#ffd700",
-  };
-
-  // Rotación opcional
+  // Rotación
   const g = useRef();
-  useFrame((_, dt) => { if (rotate && g.current) g.current.rotation.y += dt * 0.2; });
+  useFrame((_, dt) => {
+    if (rotate && g.current) g.current.rotation.y += dt * 0.2;
+  });
+
+  const label = (text, pos, size=0.4) => showLabels ? (
+    <Text position={pos} fontSize={size} anchorX="center" anchorY="middle">{text}</Text>
+  ) : null;
 
   return (
     <group ref={g}>
-      {/* Corteza */}
-      <mesh position={[offsets.crust, 0, 0]}>
-        <sphereGeometry args={[rCrust, 96, 96]} />
-        <meshStandardMaterial color={COLORS.crust} roughness={0.85} metalness={0.05} />
+      {/* Corte por phiLength (menor a 2π deja un "quesito" abierto) */}
+      {/* Corte vertical (phiLength=cut) */}
+      {/* Corte visible en todas las capas para ver el interior */}
+      {/* Corte = 5.2 rad (~298°) deja ~62° abierto */}
+      {/* Núcleo interno */}
+      <mesh>
+        <sphereGeometry args={[rInnerCore, 96, 96, 0, cut, 0, Math.PI]} />
+        <meshStandardMaterial color="#ffd966" emissive="#332200" roughness={0.5} metalness={0.1} />
       </mesh>
-
-      {/* Manto */}
-      <mesh position={[offsets.mantle, 0, 0]}>
-        <sphereGeometry args={[rMantle, 96, 96]} />
-        <meshStandardMaterial color={COLORS.mantle} roughness={0.8} metalness={0.05} />
-      </mesh>
+      {label("Núcleo interno", [0, rInnerCore + 0.4, 0])}
 
       {/* Núcleo externo */}
-      <mesh position={[offsets.outer, 0, 0]}>
-        <sphereGeometry args={[rOuterCore, 96, 96]} />
-        <meshStandardMaterial color={COLORS.outer} roughness={0.6} metalness={0.15} />
+      <mesh>
+        <sphereGeometry args={[rOuterCore, 96, 96, 0, cut, 0, Math.PI]} />
+        <meshStandardMaterial color="#ffae42" transparent opacity={0.85} roughness={0.6} metalness={0.05} />
       </mesh>
+      {label("Núcleo externo", [0, rOuterCore + 0.4, 0])}
 
-      {/* Núcleo interno */}
-      <mesh position={[offsets.inner, 0, 0]}>
-        <sphereGeometry args={[rInnerCore, 96, 96]} />
-        <meshStandardMaterial color={COLORS.inner} roughness={0.25} metalness={0.6} />
+      {/* Manto */}
+      <mesh>
+        <sphereGeometry args={[rMantle, 96, 96, 0, cut, 0, Math.PI]} />
+        <meshStandardMaterial color="#e8591c" transparent opacity={0.65} roughness={0.7} metalness={0} />
       </mesh>
+      {label("Manto", [0, rMantle + 0.4, 0])}
 
-      {/* Etiquetas prolijas */}
-      {showLabels && (
-        <>
-          <LabelWithLine
-            text="Corteza"
-            from={new THREE.Vector3(offsets.crust + rCrust * 0.9,  rCrust * 0.35, 0)}
-            to={new THREE.Vector3(   offsets.crust + rCrust * 1.18, rCrust * 0.35, 0)}
-          />
-          <LabelWithLine
-            text="Manto"
-            from={new THREE.Vector3(offsets.mantle + rMantle * 0.9, -rMantle * 0.15, 0)}
-            to={new THREE.Vector3(   offsets.mantle + rMantle * 1.25,-rMantle * 0.15, 0)}
-          />
-          <LabelWithLine
-            text="Núcleo externo"
-            from={new THREE.Vector3(offsets.outer + rOuterCore * 0.9,  rOuterCore * 0.15, 0)}
-            to={new THREE.Vector3(   offsets.outer + rOuterCore * 1.35, rOuterCore * 0.15, 0)}
-          />
-          <LabelWithLine
-            text="Núcleo interno"
-            from={new THREE.Vector3(offsets.inner + rInnerCore * 0.9, 0, 0)}
-            to={new THREE.Vector3(   offsets.inner + rInnerCore * 1.45, 0, 0)}
-          />
-        </>
-      )}
+      {/* Corteza (con textura si hay) */}
+      <mesh>
+        <sphereGeometry args={[rCrust, 128, 128, 0, cut, 0, Math.PI]} />
+        {map
+          ? <meshBasicMaterial map={map} toneMapped={false} transparent opacity={0.95} />
+          : <meshStandardMaterial color="#7bb6ff" transparent opacity={0.9} roughness={0.8} metalness={0} />
+        }
+      </mesh>
+      {label("Corteza", [0, rCrust + 0.5, 0])}
     </group>
   );
 }
@@ -900,7 +858,7 @@ function HUD({
   showVisualMeasures, setShowVisualMeasures,
   open, setOpen,
   // Earth layers controls:
-  earthExplode, setEarthExplode,
+  earthCut, setEarthCut,
   earthRotate, setEarthRotate,
   earthLabels, setEarthLabels,
 }) {
@@ -1043,10 +1001,8 @@ function HUD({
         {scene === "earth" && (
           <>
             <div style={{fontWeight:800, fontFamily:'Orbitron, sans-serif', marginBottom:8, letterSpacing:1}}>CAPAS DE LA TIERRA</div>
-            <div style={{fontFamily:'Roboto Mono, monospace', marginBottom:6}}>
-              Separación de capas (exploded): {(earthExplode*100).toFixed(0)}%
-            </div>
-            <input type="range" min={0} max={1} step={0.01} value={earthExplode} onChange={(e)=>setEarthExplode(parseFloat(e.target.value))} style={{width:260}}/>
+            <div style={{fontFamily:'Roboto Mono, monospace', marginBottom:6}}>Apertura del corte: {earthCut.toFixed(2)} rad</div>
+            <input type="range" min={3.6} max={6.2} step={0.02} value={earthCut} onChange={(e)=>setEarthCut(parseFloat(e.target.value))} style={{width:260}}/>
 
             <div style={{display:'flex', alignItems:'center', gap:10, marginTop:12, fontFamily:'Roboto Mono, monospace'}}>
               <input id="earthRot" type="checkbox" checked={earthRotate} onChange={(e)=>setEarthRotate(e.target.checked)} />
@@ -1070,7 +1026,7 @@ const Scene = forwardRef(function Scene(
     scene, speed, moving, sunSpeed, onSelect, useRealMoonDistance, scaleCfg,
     planetsMoving, dataMode, showVisualMeasures,
     // Earth layers:
-    earthExplode, earthRotate, earthLabels
+    earthCut, earthRotate, earthLabels
   },
   ref
 ) {
@@ -1159,7 +1115,8 @@ const Scene = forwardRef(function Scene(
 
       {scene === "earth" && (
         <group position={[0, 0, 0]}>
-          <EarthLayers explode={earthExplode} rotate={earthRotate} showLabels={earthLabels} />
+          <EarthLayers map={maps.earth} cut={earthCut} rotate={earthRotate} showLabels={earthLabels} />
+          {/* Título flotante */}
           <Text position={[0, 8, 0]} fontSize={0.9} anchorX="center" anchorY="middle">Capas de la Tierra</Text>
         </group>
       )}
@@ -1213,8 +1170,8 @@ export default function App() {
   const [useRealMoonDistance, setUseRealMoonDistance] = useState(true);
   const [showVisualMeasures, setShowVisualMeasures] = useState(false); // oculto al inicio (solo km cuando se active)
 
-  // Earth Layers (exploded, sin cortes)
-  const [earthExplode, setEarthExplode] = useState(1);  // 0 = cerradas, 1 = separadas
+  // Earth Layers
+  const [earthCut, setEarthCut] = useState(5.2);  // 1.2–6.28 rad; 5.2 deja "ventana" agradable
   const [earthRotate, setEarthRotate] = useState(true);
   const [earthLabels, setEarthLabels] = useState(true);
 
@@ -1264,7 +1221,7 @@ export default function App() {
         onJumpToKey={jumpToKey}
         showVisualMeasures={showVisualMeasures} setShowVisualMeasures={setShowVisualMeasures}
         open={hudOpen} setOpen={setHudOpen}
-        earthExplode={earthExplode} setEarthExplode={setEarthExplode}
+        earthCut={earthCut} setEarthCut={setEarthCut}
         earthRotate={earthRotate} setEarthRotate={setEarthRotate}
         earthLabels={earthLabels} setEarthLabels={setEarthLabels}
       />
@@ -1308,7 +1265,7 @@ export default function App() {
             planetsMoving={planetsMoving}
             dataMode={dataMode}
             showVisualMeasures={showVisualMeasures}
-            earthExplode={earthExplode}
+            earthCut={earthCut}
             earthRotate={earthRotate}
             earthLabels={earthLabels}
           />
