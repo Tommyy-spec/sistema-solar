@@ -1,5 +1,4 @@
-// App.js — Sistema Solar 3D + Capas de la Tierra (mejoradas)
-// (Luna anidada + fly-to + Datos importantes + HUD plegable + medidas en km + Earth Layers con etiquetas y panel)
+// App.js — Sistema Solar 3D + Capas de la Tierra (sólidas + etiquetas tipo esquema)
 // CRA + three r0.160 + @react-three/drei
 
 import React, {
@@ -48,7 +47,7 @@ const PUB =
 const resolveURL = (u) =>
   /^(https?:|data:)/i.test(u) ? u : `${PUB}${u.startsWith("/") ? "" : "/"}${u}`;
 
-/* =================== Rutas de texturas (tolerantes a mayúsculas) =================== */
+/* =================== Rutas de texturas =================== */
 const TEX = {
   sun: [
     "/textures/sol/sun.jpg",
@@ -126,7 +125,7 @@ const RENDER_SCALES_BASE = {
 };
 function buildScale(key) {
   const cfg = RENDER_SCALES_BASE[key];
-  const sizeFactor = cfg.sunR / SUN.radius_km;       // km -> unidades (tamaños)
+  const sizeFactor = cfg.sunR / SUN.radius_km;          // km -> unidades (tamaños)
   const distFactor = (cfg.sunR * cfg.auInSunR) / AU_KM; // km -> unidades (distancias)
   return { ...cfg, sizeFactor, distFactor, planetExaggeration: cfg.planetExaggeration ?? 1.0 };
 }
@@ -428,7 +427,7 @@ function Meteors({ count = 70, radius = 260 }) {
   );
 }
 
-/* =================== Medidas visuales Sol→planeta (solo km) =================== */
+/* =================== Medidas visuales Sol→planeta =================== */
 function PlanetMeasureLine({ planetKey, planetRefs, color, au }) {
   const [pts, setPts] = useState(null);
   const [labelPos, setLabelPos] = useState(new THREE.Vector3());
@@ -453,7 +452,7 @@ function PlanetMeasureLine({ planetKey, planetRefs, color, au }) {
   );
 }
 
-/* =================== Tierra + Luna (Luna anidada) =================== */
+/* =================== Tierra + Luna =================== */
 function EarthWithMoon({
   maps,
   speed,
@@ -664,21 +663,14 @@ const SolarSystem = forwardRef(function SolarSystem(
   );
 });
 
-/* =================== Utilidades (UI externa) =================== */
-function fmtKm(n) {
-  return n.toLocaleString("es-AR");
-}
-function diamInEarths(planet) {
-  return (planet.radius_km * 2) / EARTH_DIAM_KM;
-}
-function sizeDisplay(planet, dataMode) {
-  if (dataMode === "REAL_1_1") return `${fmtKm(planet.radius_km * 2)} km (diámetro)`;
+/* =================== Utilidades =================== */
+function fmtKm(n){ return n.toLocaleString("es-AR"); }
+function diamInEarths(planet){ return (planet.radius_km*2) / EARTH_DIAM_KM; }
+function sizeDisplay(planet, dataMode){
+  if (dataMode === 'REAL_1_1') return `${fmtKm(planet.radius_km*2)} km (diámetro)`;
   return `${diamInEarths(planet).toFixed(2)} D⊕ (diámetro)`;
 }
-function distDisplayKm(au) {
-  const km = Math.round(au * AU_KM);
-  return `${fmtKm(km)} km`;
-}
+function distDisplayKm(au){ const km = Math.round(au * AU_KM); return `${fmtKm(km)} km`; }
 
 /* =================== "Datos importantes" por cuerpo =================== */
 const IMPORTANT = {
@@ -785,7 +777,7 @@ const EARTH_LAYER_DATA = {
   },
 };
 
-/* =================== Panel de info (ahora también para capas) =================== */
+/* =================== InfoPanel (también para capas) =================== */
 function InfoPanel({ selected, onClose, dataMode, onFocus }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -796,9 +788,7 @@ function InfoPanel({ selected, onClose, dataMode, onFocus }) {
 
   const distKm = selected.au ? selected.au * AU_KM : null;
   const vueltas = selected.au ? laps(distKm) : null;
-  const important = IMPORTANT[selected.key] || null;
 
-  // Si es capa de la Tierra, agregamos filas específicas
   const isEarthLayer = !!EARTH_LAYER_DATA[selected.key];
   const layer = isEarthLayer ? EARTH_LAYER_DATA[selected.key] : null;
 
@@ -874,7 +864,6 @@ function InfoPanel({ selected, onClose, dataMode, onFocus }) {
           marginBottom: 12,
         }}
       >
-        {/* Para planetas */}
         {selected.au ? (
           <>
             <div style={{ opacity: 0.7 }}>Distancia media</div>
@@ -882,7 +871,6 @@ function InfoPanel({ selected, onClose, dataMode, onFocus }) {
           </>
         ) : null}
 
-        {/* Tamaño (planetas) o Radio (capas) */}
         {!isEarthLayer ? (
           <>
             <div style={{ opacity: 0.7 }}>Tamaño</div>
@@ -926,7 +914,6 @@ function InfoPanel({ selected, onClose, dataMode, onFocus }) {
         <div>{isEarthLayer ? layer.formed : selected.formed}</div>
       </div>
 
-      {/* Analogía sólo para planetas */}
       {vueltas && (
         <div
           style={{
@@ -950,8 +937,7 @@ function InfoPanel({ selected, onClose, dataMode, onFocus }) {
         </div>
       )}
 
-      {/* Datos importantes planetas o dato/facto para capa */}
-      {(!isEarthLayer && IMPORTANT[selected.key]) && (
+      {!isEarthLayer && IMPORTANT[selected.key] && (
         <div
           style={{
             fontSize: 13,
@@ -999,66 +985,36 @@ function InfoPanel({ selected, onClose, dataMode, onFocus }) {
   );
 }
 
-/* =================== Panel de distancias (cerrable) =================== */
-function DistancesPanel({ scaleCfg, visible, onClose }) {
-  const rows = useMemo(() => {
+/* =================== Panel de distancias =================== */
+function DistancesPanel({ scaleCfg, visible, onClose }){
+  const rows = useMemo(()=> {
     const arr = [];
-    for (let i = 0; i < PLANETS.length - 1; i++) {
-      const a = PLANETS[i],
-        b = PLANETS[i + 1];
-      const dAU = Math.abs(b.au - a.au),
-        dKM = dAU * AU_KM,
-        dScene = dKM * scaleCfg.distFactor;
-      arr.push({ from: a.key, to: b.key, dAU, dKM, dScene });
+    for (let i=0;i<PLANETS.length-1;i++){
+      const a=PLANETS[i], b=PLANETS[i+1];
+      const dAU=Math.abs(b.au-a.au), dKM=dAU*AU_KM, dScene=dKM*scaleCfg.distFactor;
+      arr.push({from:a.key, to:b.key, dAU, dKM, dScene});
     }
     return arr;
   }, [scaleCfg]);
-  if (!visible) return null;
+  if(!visible) return null;
   return (
-    <div
-      style={{
-        position: "fixed",
-        left: 16,
-        bottom: 16,
-        zIndex: 26,
-        color: "#e5f2ff",
-        backdropFilter: "blur(8px)",
-        background: "rgba(10,20,40,.55)",
-        border: "1px solid rgba(148,163,184,.35)",
-        borderRadius: 14,
-        padding: 12,
-        maxWidth: 420,
-      }}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <div style={{ fontWeight: 800, fontFamily: "Orbitron, sans-serif", letterSpacing: 1 }}>
-          Distancias entre planetas
-        </div>
-        <button
-          onClick={onClose}
-          title="Cerrar"
-          style={{
-            border: "1px solid rgba(255,255,255,.3)",
-            background: "rgba(255,255,255,.08)",
-            color: "#fff",
-            borderRadius: 8,
-            padding: "4px 8px",
-            fontFamily: "Roboto Mono, monospace",
-          }}
-        >
-          ✕
-        </button>
+    <div style={{
+      position:'fixed',left:16,bottom:16,zIndex:26,color:'#e5f2ff',
+      backdropFilter:'blur(8px)', background:'rgba(10,20,40,.55)',
+      border:'1px solid rgba(148,163,184,.35)', borderRadius:14, padding:12, maxWidth:420
+    }}>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
+        <div style={{fontWeight:800, fontFamily:'Orbitron, sans-serif', letterSpacing:1}}>Distancias entre planetas</div>
+        <button onClick={onClose} title="Cerrar" style={{
+          border:'1px solid rgba(255,255,255,.3)', background:'rgba(255,255,255,.08)',
+          color:'#fff', borderRadius:8, padding:'4px 8px', fontFamily:'Roboto Mono, monospace'
+        }}> ✕ </button>
       </div>
-      <div style={{ fontFamily: "Roboto Mono, monospace", fontSize: 12, lineHeight: 1.4 }}>
-        {rows.map((r, idx) => (
-          <div key={idx} style={{ display: "grid", gridTemplateColumns: "auto 1fr", columnGap: 8, marginBottom: 6 }}>
-            <div style={{ opacity: 0.85 }}>
-              {r.from} → {r.to}
-            </div>
-            <div>
-              {r.dAU.toFixed(2)} AU · {fmtKm(Math.round(r.dKM))} km{" "}
-              <span style={{ opacity: 0.75 }}>· escena ≈ {r.dScene.toFixed(2)} u</span>
-            </div>
+      <div style={{fontFamily:'Roboto Mono, monospace', fontSize:12, lineHeight:1.4}}>
+        {rows.map((r,idx)=> (
+          <div key={idx} style={{display:'grid', gridTemplateColumns:'auto 1fr', columnGap:8, marginBottom:6}}>
+            <div style={{opacity:.85}}>{r.from} → {r.to}</div>
+            <div>{r.dAU.toFixed(2)} AU · {fmtKm(Math.round(r.dKM))} km <span style={{opacity:.75}}>· escena ≈ {r.dScene.toFixed(2)} u</span></div>
           </div>
         ))}
       </div>
@@ -1066,66 +1022,78 @@ function DistancesPanel({ scaleCfg, visible, onClose }) {
   );
 }
 
-/* =================== Leyenda escala (info) =================== */
-function ScaleLegend({ scaleCfg }) {
+/* =================== Leyenda escala =================== */
+function ScaleLegend({ scaleCfg }){
   const kmPerSceneUnit = 1 / scaleCfg.distFactor;
   const kmPerSceneUnitSizes = 1 / scaleCfg.sizeFactor;
   return (
-    <div
-      style={{
-        position: "fixed",
-        left: 16,
-        bottom: 116,
-        zIndex: 20,
-        color: "#d1e9ff",
-        backdropFilter: "blur(8px)",
-        background: "rgba(0,0,0,.35)",
-        padding: 10,
-        borderRadius: 12,
-        border: "1px solid rgba(255,255,255,.2)",
-        fontFamily: "Roboto Mono, monospace",
-        pointerEvents: "none",
-      }}
-    >
-      <div style={{ fontSize: 11, opacity: 0.85 }}>RENDER</div>
-      <div style={{ fontWeight: 700 }}>1 u (tamaño) ≈ {kmPerSceneUnitSizes.toLocaleString("es-AR")} km</div>
-      <div style={{ fontWeight: 700 }}>1 u (distancia) ≈ {kmPerSceneUnit.toLocaleString("es-AR")} km</div>
+    <div style={{
+      position:'fixed', left:16, bottom:116, zIndex:20, color:'#d1e9ff',
+      backdropFilter:'blur(8px)', background:'rgba(0,0,0,.35)', padding:10, borderRadius:12,
+      border:'1px solid rgba(255,255,255,.2)', fontFamily:'Roboto Mono, monospace', pointerEvents:'none'
+    }}>
+      <div style={{fontSize:11, opacity:.85}}>RENDER</div>
+      <div style={{fontWeight:700}}>1 u (tamaño) ≈ {(kmPerSceneUnitSizes).toLocaleString('es-AR')} km</div>
+      <div style={{fontWeight:700}}>1 u (distancia) ≈ {(kmPerSceneUnit).toLocaleString('es-AR')} km</div>
     </div>
   );
 }
 
-/* =================== EARTH LAYERS (Capas de la Tierra) — SOLIDAS + ETIQUETAS =================== */
+/* =================== EARTH LAYERS — sólidas + etiquetas tipo esquema =================== */
 function EarthLayers({ map, cut = 5.2, rotate = true, showLabels = true, onSelect }) {
-  // radio visual de la Tierra en esta escena (independiente de “escala solar”)
-  const R = 6.5;
+  const R = 6.5; // radio visual base
 
-  // radios (km reales → proporción de 6371, pero aquí ya usamos R)
-  const rInnerCore = R * (1221 / 6371); // Núcleo interno
-  const rOuterCore = R * (3480 / 6371); // radio exterior núcleo externo
-  const rMantle = R * (6340 / 6371);
-  const rCrust = R * 1.0;
+  // radios relativos (km reales / 6371)
+  const rInnerCore = R * (1221 / 6371);
+  const rOuterCore = R * (3480 / 6371);
+  const rMantle    = R * (6340 / 6371);
+  const rCrust     = R * 1.0;
 
-  // Rotación
   const g = useRef();
   useFrame((_, dt) => {
     if (rotate && g.current) g.current.rotation.y += dt * 0.2;
   });
 
-  // helper de etiqueta + línea guía
-  const L = ({ text, fromR, theta, phi, out = 1.2, size = 0.42 }) => {
+  // Click → InfoPanel de capa
+  const clickLayer = (name) => {
+    const d = EARTH_LAYER_DATA[name];
+    if (!d) return;
+    onSelect?.({
+      key: d.key,
+      type: "Capa terrestre",
+      day_h: "—",
+      tempC: d.tempC,
+      life: "—",
+      formed: d.formed,
+    });
+  };
+
+  // piel doble para que el corte no se vea hueco
+  const SolidLayer = ({ radius, colorHex, name }) => (
+    <group onClick={() => clickLayer(name)}>
+      <mesh>
+        <sphereGeometry args={[radius, 96, 96, 0, cut, 0, Math.PI]} />
+        <meshBasicMaterial color={colorHex} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh>
+        <sphereGeometry args={[radius * 0.9985, 96, 96, 0, cut, 0, Math.PI]} />
+        <meshBasicMaterial color={colorHex} side={THREE.BackSide} />
+      </mesh>
+    </group>
+  );
+
+  /* === Puntero: desde un punto en la capa → radial corto → horizontal → texto === */
+  const LabelPointer = ({ from, toX, text, color = "#e5e7eb", size = 0.48 }) => {
     if (!showLabels) return null;
-    // posición en la superficie (desde el centro) usando esféricas
-    const from = new THREE.Vector3().setFromSpherical(
-      new THREE.Spherical(fromR, theta, phi)
-    );
-    // punto de salida y ancla del texto
-    const mid = from.clone().multiplyScalar((fromR * (1 + out)) / (fromR || 1));
-    const to = mid.clone().add(new THREE.Vector3(0.8, 0.0, 0)); // pequeño offset horizontal
+    const p0 = new THREE.Vector3(...from);
+    const p1 = p0.clone().add(new THREE.Vector3(0.35, 0, 0));       // radial hacia afuera
+    const p2 = new THREE.Vector3(toX, p1.y, p1.z);                  // horizontal a la columna
     return (
       <>
-        <QuadraticBezierLine start={from} mid={mid} end={to} dashed={false} lineWidth={1.2} />
-        <Billboard position={to} follow>
-          <Text fontSize={size} anchorX="left" anchorY="middle">
+        <Line points={[p0, p1]} lineWidth={1.4} color={color} />
+        <Line points={[p1, p2]} lineWidth={1.4} color={color} />
+        <Billboard position={[toX + 0.15, p2.y, p2.z]} follow>
+          <Text fontSize={size} anchorX="left" anchorY="middle" color={color}>
             {text}
           </Text>
         </Billboard>
@@ -1133,107 +1101,106 @@ function EarthLayers({ map, cut = 5.2, rotate = true, showLabels = true, onSelec
     );
   };
 
-  // Click helpers
-  const clickLayer = (name) => {
-    const data = EARTH_LAYER_DATA[name];
-    if (!data) return;
-    onSelect &&
-      onSelect({
-        key: data.key,
-        type: "Capa terrestre",
-        day_h: "—",
-        tempC: data.tempC,
-        life: "—",
-        formed: data.formed,
-      });
-  };
+  // rail (columna) de etiquetas a la derecha
+  const railX = R * 2.7;
+
+  // Alturas para que no se monten
+  const yTop    =  1.55;
+  const yHigh   =  1.10;
+  const yMid    =  0.55;
+  const yLow    =  0.10;
+  const yLower  = -0.35;
+
+  // Punto de salida en el borde del corte (x positivo)
+  const fromOn = (radius, y) => [radius * 0.86, y, 0];
+
+  // Colores de etiquetas
+  const cCrust   = "#ffffff";
+  const cAstheno = "#d62d20"; // rojo
+  const cMantle  = "#ff6f00"; // naranja
+  const cOuter   = "#ffae42"; // ámbar
+  const cInner   = "#ffd966"; // amarillo
+
+  // Extras (lado izquierdo)
+  const leftRailX = -R * 2.0;
+  const LeftNote = ({ y, text, color="#9fb3c8", size=0.42 }) => (
+    <>
+      <Line points={[[leftRailX + 0.2, y, 0], [ -R*0.95, y, 0 ]]} lineWidth={1.2} color={color} />
+      <Billboard position={[leftRailX, y, 0]} follow>
+        <Text fontSize={size} anchorX="right" anchorY="middle" color={color}>{text}</Text>
+      </Billboard>
+    </>
+  );
 
   return (
     <group ref={g}>
-      {/* Núcleo interno — SOLIDO (opaco) */}
-      <mesh onClick={() => clickLayer("Núcleo interno")}>
-        <sphereGeometry args={[rInnerCore, 96, 96, 0, cut, 0, Math.PI]} />
-        <meshStandardMaterial color={EARTH_LAYER_DATA["Núcleo interno"].colorHex} roughness={0.5} metalness={0.1} />
-      </mesh>
+      {/* Capas sólidas */}
+      <SolidLayer radius={rInnerCore} colorHex={EARTH_LAYER_DATA["Núcleo interno"].colorHex} name="Núcleo interno" />
+      <SolidLayer radius={rOuterCore} colorHex={EARTH_LAYER_DATA["Núcleo externo"].colorHex} name="Núcleo externo" />
+      <SolidLayer radius={rMantle}    colorHex={EARTH_LAYER_DATA["Manto"].colorHex}           name="Manto" />
+      <group onClick={() => clickLayer("Corteza")}>
+        <mesh>
+          <sphereGeometry args={[rCrust, 128, 128, 0, cut, 0, Math.PI]} />
+          {map
+            ? <meshBasicMaterial map={map} side={THREE.DoubleSide} toneMapped={false} />
+            : <meshBasicMaterial color={EARTH_LAYER_DATA["Corteza"].colorHex} side={THREE.DoubleSide} />
+          }
+        </mesh>
+        <mesh>
+          <sphereGeometry args={[rCrust * 0.9985, 128, 128, 0, cut, 0, Math.PI]} />
+          {map
+            ? <meshBasicMaterial map={map} side={THREE.BackSide} toneMapped={false} />
+            : <meshBasicMaterial color={EARTH_LAYER_DATA["Corteza"].colorHex} side={THREE.BackSide} />
+          }
+        </mesh>
+      </group>
 
-      {/* Núcleo externo — SOLIDO (opaco) */}
-      <mesh onClick={() => clickLayer("Núcleo externo")}>
-        <sphereGeometry args={[rOuterCore, 96, 96, 0, cut, 0, Math.PI]} />
-        <meshStandardMaterial color={EARTH_LAYER_DATA["Núcleo externo"].colorHex} roughness={0.6} metalness={0.05} />
-      </mesh>
+      {/* Etiquetas estilo esquema (derecha) */}
+      <LabelPointer text="Corteza terrestre" color={cCrust}   toX={railX} from={fromOn(rCrust*0.98, yTop)}   size={0.5}/>
+      <LabelPointer text="Astenósfera"       color={cAstheno} toX={railX} from={fromOn(rMantle*0.96, yHigh)} size={0.48}/>
+      <LabelPointer text="Manto"             color={cMantle}  toX={railX} from={fromOn(rMantle*0.70, yMid)}  size={0.48}/>
+      <LabelPointer text="Núcleo externo"    color={cOuter}   toX={railX} from={fromOn(rOuterCore*0.98, yLow)} size={0.48}/>
+      <LabelPointer text="Núcleo interno"    color={cInner}   toX={railX} from={fromOn(rInnerCore*0.90, yLower)} size={0.48}/>
 
-      {/* Manto — SOLIDO (opaco) */}
-      <mesh onClick={() => clickLayer("Manto")}>
-        <sphereGeometry args={[rMantle, 96, 96, 0, cut, 0, Math.PI]} />
-        <meshStandardMaterial color={EARTH_LAYER_DATA["Manto"].colorHex} roughness={0.7} metalness={0.0} />
-      </mesh>
-
-      {/* Corteza — con textura si existe, opaca; sino color sólido opaco */}
-      <mesh onClick={() => clickLayer("Corteza")}>
-        <sphereGeometry args={[rCrust, 128, 128, 0, cut, 0, Math.PI]} />
-        {map ? (
-          <meshBasicMaterial map={map} toneMapped={false} />
-        ) : (
-          <meshStandardMaterial color={EARTH_LAYER_DATA["Corteza"].colorHex} roughness={0.8} metalness={0} />
-        )}
-      </mesh>
-
-      {/* Etiquetas bien separadas (ángulos distintos) */}
-      <L text="Núcleo interno" fromR={rInnerCore} theta={Math.PI / 2.6} phi={-Math.PI / 5} out={1.0} size={0.44} />
-      <L text="Núcleo externo" fromR={rOuterCore} theta={Math.PI / 2.0} phi={Math.PI / 7} out={1.04} size={0.44} />
-      <L text="Manto"          fromR={rMantle}     theta={Math.PI / 2.3} phi={Math.PI / 2.2} out={1.08} size={0.46} />
-      <L text="Corteza"        fromR={rCrust}      theta={Math.PI / 1.9} phi={-Math.PI / 3} out={1.12} size={0.48} />
+      {/* Notas a la izquierda */}
+      {showLabels && (
+        <>
+          <LeftNote y={yTop + 0.35} text="Atmósfera" />
+          <LeftNote y={yMid - 0.25} text="Hidrosfera" />
+        </>
+      )}
     </group>
   );
 }
 
-/* =================== HUD (UI externa) — PLEGABLE =================== */
+/* =================== HUD (UI externa) =================== */
 function HUD({
-  speed,
-  setSpeed,
-  modeKey,
-  setModeKey,
-  moving,
-  setMoving,
-  sunSpeed,
-  setSunSpeed,
-  scene,
-  setScene,
-  dataMode,
-  setDataMode,
-  showDistances,
-  setShowDistances,
-  useRealMoonDistance,
-  setUseRealMoonDistance,
-  planetsMoving,
-  setPlanetsMoving,
+  speed, setSpeed,
+  modeKey, setModeKey,
+  moving, setMoving,
+  sunSpeed, setSunSpeed,
+  scene, setScene,
+  dataMode, setDataMode,
+  showDistances, setShowDistances,
+  useRealMoonDistance, setUseRealMoonDistance,
+  planetsMoving, setPlanetsMoving,
   onJumpToKey,
-  showVisualMeasures,
-  setShowVisualMeasures,
-  open,
-  setOpen,
+  showVisualMeasures, setShowVisualMeasures,
+  open, setOpen,
   // Earth layers controls:
-  earthCut,
-  setEarthCut,
-  earthRotate,
-  setEarthRotate,
-  earthLabels, // (ya no lo usamos porque ahora las etiquetas siguen a la cámara)
-  setEarthLabels,
+  earthCut, setEarthCut,
+  earthRotate, setEarthRotate,
+  earthLabels, setEarthLabels,
 }) {
   if (!open) {
     return (
       <button
         onClick={() => setOpen(true)}
         style={{
-          position: "fixed",
-          top: 16,
-          left: 16,
-          zIndex: 30,
-          padding: "10px 12px",
-          borderRadius: 12,
+          position: "fixed", top: 16, left: 16, zIndex: 30,
+          padding: "10px 12px", borderRadius: 12,
           border: "1px solid rgba(255,255,255,.25)",
-          background: "rgba(0,0,0,.45)",
-          color: "#fff",
+          background: "rgba(0,0,0,.45)", color: "#fff",
           fontFamily: "Roboto Mono, monospace",
         }}
         title="Mostrar controles"
@@ -1484,7 +1451,7 @@ function HUD({
               <label htmlFor="earthLbl">Mostrar etiquetas</label>
             </div>
             <div style={{ fontSize: 12, opacity: 0.8, marginTop: 6, fontFamily: "Roboto Mono, monospace" }}>
-              * Las etiquetas ahora miran siempre a la cámara (Billboard).
+              * Las etiquetas miran siempre a la cámara (Billboard).
             </div>
           </>
         )}
@@ -1561,7 +1528,6 @@ const Scene = forwardRef(function Scene(
   useImperativeHandle(ref, () => ({
     focusOn(key) {
       if (scene === "earth") {
-        // acercar al centro de la Tierra
         const pos = new THREE.Vector3(0, 0, 0);
         const dist = 12;
         setControlsAutoTarget(false);
@@ -1676,7 +1642,7 @@ export default function App() {
   const [showVisualMeasures, setShowVisualMeasures] = useState(false);
 
   // Earth Layers
-  const [earthCut, setEarthCut] = useState(5.2); // 1.2–6.28 rad; 5.2 deja "ventana" agradable
+  const [earthCut, setEarthCut] = useState(5.2);
   const [earthRotate, setEarthRotate] = useState(true);
   const [earthLabels, setEarthLabels] = useState(true);
 
@@ -1716,41 +1682,25 @@ export default function App() {
     <div style={{ width: "100%", height: "100vh", background: "black" }}>
       {/* UI */}
       <HUD
-        speed={speed}
-        setSpeed={setSpeed}
-        modeKey={modeKey}
-        setModeKey={setModeKey}
-        moving={moving}
-        setMoving={setMoving}
-        sunSpeed={sunSpeed}
-        setSunSpeed={setSunSpeed}
+        speed={speed} setSpeed={setSpeed}
+        modeKey={modeKey} setModeKey={setModeKey}
+        moving={moving} setMoving={setMoving}
+        sunSpeed={sunSpeed} setSunSpeed={setSunSpeed}
         scene={scene}
-        setScene={(s) => {
-          setScene(s);
-          setSelected(null);
-        }}
-        dataMode={dataMode}
-        setDataMode={setDataMode}
-        showDistances={showDistances}
-        setShowDistances={setShowDistances}
-        useRealMoonDistance={useRealMoonDistance}
-        setUseRealMoonDistance={setUseRealMoonDistance}
-        planetsMoving={planetsMoving}
-        setPlanetsMoving={setPlanetsMoving}
+        setScene={(s)=>{ setScene(s); setSelected(null); }}
+        dataMode={dataMode} setDataMode={setDataMode}
+        showDistances={showDistances} setShowDistances={setShowDistances}
+        useRealMoonDistance={useRealMoonDistance} setUseRealMoonDistance={setUseRealMoonDistance}
+        planetsMoving={planetsMoving} setPlanetsMoving={setPlanetsMoving}
         onJumpToKey={jumpToKey}
-        showVisualMeasures={showVisualMeasures}
-        setShowVisualMeasures={setShowVisualMeasures}
-        open={hudOpen}
-        setOpen={setHudOpen}
-        earthCut={earthCut}
-        setEarthCut={setEarthCut}
-        earthRotate={earthRotate}
-        setEarthRotate={setEarthRotate}
-        earthLabels={earthLabels}
-        setEarthLabels={setEarthLabels}
+        showVisualMeasures={showVisualMeasures} setShowVisualMeasures={setShowVisualMeasures}
+        open={hudOpen} setOpen={setHudOpen}
+        earthCut={earthCut} setEarthCut={setEarthCut}
+        earthRotate={earthRotate} setEarthRotate={setEarthRotate}
+        earthLabels={earthLabels} setEarthLabels={setEarthLabels}
       />
 
-      {/* InfoPanel ahora también en escena "earth" */}
+      {/* InfoPanel (planetas + capas) */}
       {selected && (
         <InfoPanel
           selected={selected}
@@ -1762,7 +1712,7 @@ export default function App() {
 
       {scene === "solar" && <ScaleLegend scaleCfg={scaleCfg} />}
       {scene === "solar" && (
-        <DistancesPanel scaleCfg={scaleCfg} visible={showDistances} onClose={() => setShowDistances(false)} />
+        <DistancesPanel scaleCfg={scaleCfg} visible={showDistances} onClose={()=>setShowDistances(false)} />
       )}
 
       {/* Canvas */}
